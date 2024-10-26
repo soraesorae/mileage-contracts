@@ -140,6 +140,43 @@ contract SortedListTest is SortedList, Test {
         assertEq(result[6].addr, address(0x4));
     }
 
+    function test_UpdateElement() public {
+        address[] memory addr = new address[](7);
+        uint256[] memory value = new uint256[](7);
+
+        addr[0] = address(0x1);
+        value[0] = 10;
+        addr[1] = address(0x2);
+        value[1] = 5;
+        addr[2] = address(0x3);
+        value[2] = 10;
+        addr[3] = address(0x4);
+        value[3] = 1;
+        addr[4] = address(0x5);
+        value[4] = 7;
+        addr[5] = address(0x6);
+        value[5] = 7;
+        addr[6] = address(0x7);
+        value[6] = 11;
+
+        // addr = [1, 2, 3, 4, 5, 6, 7]
+        // value = [10, 5, 10, 1, 7, 7, 11]
+        // expected address list = [7, 1, 3, 5, 6, 2, 4]
+
+        _addElement(addr[0], value[0]);
+        _addElement(addr[1], value[1]);
+        _addElement(addr[2], value[2]);
+        _addElement(addr[3], value[3]);
+        _addElement(addr[4], value[4]);
+        _addElement(addr[5], value[5]);
+        _addElement(addr[6], value[6]);
+
+        _updateElement(addr[6], 0);
+        DataPair[] memory result = abi.decode(_getAllElement(), (DataPair[]));
+
+        assertEq(result[0].addr, address(0x1));
+    }
+
     function testFuzz_GetAllElemnt(DataPair[] memory pair) public {
         vm.assume(0 < pair.length && pair.length <= 1000);
         for (uint256 i = 0; i < pair.length; i++) {

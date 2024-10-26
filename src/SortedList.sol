@@ -16,6 +16,7 @@ abstract contract SortedList {
     mapping(address => bool) private _alreadyParticipated;
 
     address private constant END_OF_LIST = address(0xbadbeef);
+    address private constant DUMMY = address(0xbeefbad);
     address private _head = END_OF_LIST;
 
     uint256 private _listLength = 0;
@@ -55,6 +56,75 @@ abstract contract SortedList {
         }
         ++_listLength;
         return;
+    }
+
+    function _updateElement(address targetAddr, uint256 newValue) internal virtual {
+        // delta? update_inc update_dec
+        require(_alreadyParticipated[targetAddr] == true, "not found");
+        require(_listLength > 0, "length = 0");
+        address ptr = _head;
+        address prev = DUMMY;
+
+        while (ptr != END_OF_LIST) {
+            if (ptr == targetAddr) {
+                break;
+            }
+            prev = ptr;
+            ptr = _list[ptr].next;
+        }
+        require(ptr != END_OF_LIST, "not found");
+        if (prev == DUMMY) {
+            _head = _list[ptr].next;
+        } else {
+            _list[prev].next = _list[ptr].next;
+        }
+        delete _list[ptr];
+        delete _alreadyParticipated[ptr];
+        --_listLength;
+
+        _addElement(targetAddr, newValue);
+
+        // find position after update
+        // n = 1
+        // if (_listLength == 1) {
+        //     _list[ptr].value = newValue;
+        //     return;
+        // }
+
+        // if (ptr == targetAddr) {
+
+        // }
+
+        // address beforePos = address(0x0);
+        // address afterPos = address(0x0);
+
+        // bool chkBeforePos = false;
+        // bool chkAfterPos = false;
+
+        // while (chkBeforePos && chkAfterPos == false) {
+        //     // if ptr == EOL
+        //     address next = _list[ptr].next;
+        //     if (next == targetAddr) {
+        //         beforePos = ptr;
+        //         chkBeforePos = true;
+        //     }
+        //     if (_list[next].value < newValue) {
+        //         afterPos = ptr;
+        //         chkAfterPos = true;
+        //     }
+        //     ptr = next;
+        // }
+
+        // if (afterPos == beforePos) {
+        //     // trivial case
+        //     _list[targetAddr].value = newValue;
+        // } else if (targetAddr == afterPos) {
+        //     _list[targetAddr].value = newValue;
+        // } else {
+        //     _list[beforePos].next = _list[targetAddr].next;
+        //     _list[targetAddr].next = _list[afterPos].next;
+        //     _list[afterPos].next = targetAddr;
+        // }
     }
 
     function _getAllElement() internal view virtual returns (bytes memory) {
