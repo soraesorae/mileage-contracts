@@ -13,39 +13,39 @@ abstract contract SortedList {
     }
 
     mapping(address => Node) private _list;
-    mapping(address => bool) private _already_participated;
+    mapping(address => bool) private _alreadyParticipated;
 
     address private constant END_OF_LIST = address(0xbadbeef);
     address private _head = END_OF_LIST;
 
-    uint256 private _list_length = 0;
+    uint256 private _listLength = 0;
 
     constructor() {}
 
     function _getListLength() internal view virtual returns (uint256) {
-        return _list_length;
+        return _listLength;
     }
 
     /// @dev naive sorting solution
 
     function _addElement(address addr, uint256 value) internal virtual {
-        require(_already_participated[addr] == false, "duplicated");
-        _already_participated[addr] = true;
-        if (_list_length == 0) {
+        require(_alreadyParticipated[addr] == false, "duplicated");
+        _alreadyParticipated[addr] = true;
+        if (_listLength == 0) {
             _list[addr] = Node(END_OF_LIST, value);
             _head = addr;
         } else {
             address ptr = _head;
 
-            if (value <= _list[ptr].value) {
+            if (_list[ptr].value < value) {
                 _list[addr] = Node(ptr, value);
                 _head = addr;
-                ++_list_length;
+                ++_listLength;
                 return;
             }
             while (true) {
                 address next_node = _list[ptr].next;
-                if (next_node == END_OF_LIST || value <= _list[next_node].value) {
+                if (next_node == END_OF_LIST || _list[next_node].value < value) {
                     _list[addr] = Node(next_node, value);
                     _list[ptr].next = addr;
                     break;
@@ -53,19 +53,19 @@ abstract contract SortedList {
                 ptr = next_node;
             }
         }
-        ++_list_length;
+        ++_listLength;
         return;
     }
 
-    function _getAllElement() internal view virtual returns (DataPair[] memory) {
+    function _getAllElement() internal view virtual returns (bytes memory) {
         address ptr = _head;
-        DataPair[] memory arr = new DataPair[](_list_length);
+        DataPair[] memory arr = new DataPair[](_listLength);
         uint256 i = 0;
         while (ptr != END_OF_LIST) {
             arr[i] = DataPair(ptr, _list[ptr].value);
             ptr = _list[ptr].next;
             ++i;
         }
-        return arr;
+        return abi.encode(arr);
     }
 }
