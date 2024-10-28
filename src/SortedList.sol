@@ -58,6 +58,44 @@ abstract contract SortedList {
         return;
     }
 
+    function _getAllElement() internal view virtual returns (bytes memory) {
+        address ptr = _head;
+        DataPair[] memory arr = new DataPair[](_listLength);
+        uint256 i = 0;
+        while (ptr != END_OF_LIST) {
+            arr[i] = DataPair(ptr, _list[ptr].value);
+            ptr = _list[ptr].next;
+            ++i;
+        }
+        return abi.encode(arr);
+    }
+
+    /// @dev return (address, value)[] ranking [from, to]
+    function _getElementRange(uint256 from, uint256 to) internal view virtual returns (bytes memory) {
+        require(to >= from, "to < from");
+        require(from > 0, "from == 0");
+        if (to > _listLength) {
+            to = _listLength;
+        }
+        address ptr = _head;
+        uint256 listIndex = 1;
+        uint256 outputIndex = 0;
+        DataPair[] memory output = new DataPair[](to - from + 1);
+        while (ptr != END_OF_LIST) {
+            if (from <= listIndex) {
+                output[outputIndex] = DataPair(ptr, _list[ptr].value);
+                ++outputIndex;
+                if (listIndex >= to) {
+                    break;
+                }
+            }
+            ptr = _list[ptr].next;
+            ++listIndex;
+        }
+        require(outputIndex == output.length, "something wrong");
+        return abi.encode(output);
+    }
+
     function _updateElement(address targetAddr, uint256 newValue) internal virtual {
         // delta? update_inc update_dec
         require(_alreadyParticipated[targetAddr] == true, "not found");
@@ -125,43 +163,5 @@ abstract contract SortedList {
         //     _list[targetAddr].next = _list[afterPos].next;
         //     _list[afterPos].next = targetAddr;
         // }
-    }
-
-    function _getAllElement() internal view virtual returns (bytes memory) {
-        address ptr = _head;
-        DataPair[] memory arr = new DataPair[](_listLength);
-        uint256 i = 0;
-        while (ptr != END_OF_LIST) {
-            arr[i] = DataPair(ptr, _list[ptr].value);
-            ptr = _list[ptr].next;
-            ++i;
-        }
-        return abi.encode(arr);
-    }
-
-    /// @dev return (address, value)[] ranking [from, to]
-    function _getElementRange(uint256 from, uint256 to) internal view virtual returns (bytes memory) {
-        require(to >= from, "to < from");
-        require(from > 0, "from == 0");
-        if (to > _listLength) {
-            to = _listLength;
-        }
-        address ptr = _head;
-        uint256 listIndex = 1;
-        uint256 outputIndex = 0;
-        DataPair[] memory output = new DataPair[](to - from + 1);
-        while (ptr != END_OF_LIST) {
-            if (from <= listIndex) {
-                output[outputIndex] = DataPair(ptr, _list[ptr].value);
-                ++outputIndex;
-                if (listIndex >= to) {
-                    break;
-                }
-            }
-            ptr = _list[ptr].next;
-            ++listIndex;
-        }
-        require(outputIndex == output.length, "something wrong");
-        return abi.encode(output);
     }
 }
