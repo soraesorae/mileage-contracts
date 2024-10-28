@@ -138,4 +138,30 @@ abstract contract SortedList {
         }
         return abi.encode(arr);
     }
+
+    /// @dev return (address, value)[] ranking [from, to]
+    function _getElementRange(uint256 from, uint256 to) internal view virtual returns (bytes memory) {
+        require(to >= from, "to < from");
+        require(from > 0, "from == 0");
+        if (to > _listLength) {
+            to = _listLength;
+        }
+        address ptr = _head;
+        uint256 listIndex = 1;
+        uint256 outputIndex = 0;
+        DataPair[] memory output = new DataPair[](to - from + 1);
+        while (ptr != END_OF_LIST) {
+            if (from <= listIndex) {
+                output[outputIndex] = DataPair(ptr, _list[ptr].value);
+                ++outputIndex;
+                if (listIndex >= to) {
+                    break;
+                }
+            }
+            ptr = _list[ptr].next;
+            ++listIndex;
+        }
+        require(outputIndex == output.length, "something wrong");
+        return abi.encode(output);
+    }
 }

@@ -21,4 +21,8 @@ contract MockSortedList is SortedList {
     function getAllElement() public view returns (bytes memory) {
         return _getAllElement();
     }
+
+    function getElementRange(uint256 from, uint256 to) public view returns (bytes memory) {
+        return _getElementRange(from, to);
+    }
 }

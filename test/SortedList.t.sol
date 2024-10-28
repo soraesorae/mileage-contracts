@@ -81,9 +81,59 @@ contract SortedListTest is BubbleSort, Test {
         assertEq(result[6].addr, address(0x4));
     }
 
-    function test_UpdateElement() public {
+    function test_GetElementRange() public {
         address[] memory addr = new address[](7);
         uint256[] memory value = new uint256[](7);
+        addr[0] = address(0x1);
+        value[0] = 10;
+        addr[1] = address(0x2);
+        value[1] = 5;
+        addr[2] = address(0x3);
+        value[2] = 10;
+        addr[3] = address(0x4);
+        value[3] = 1;
+        addr[4] = address(0x5);
+        value[4] = 7;
+        addr[5] = address(0x6);
+        value[5] = 7;
+        addr[6] = address(0x7);
+        value[6] = 11;
+
+        // addr = [1, 2, 3, 4, 5, 6, 7]
+        // value = [10, 5, 10, 1, 7, 7, 11]
+
+        mockSortedList.addElement(addr[0], value[0]);
+        mockSortedList.addElement(addr[1], value[1]);
+        mockSortedList.addElement(addr[2], value[2]);
+        mockSortedList.addElement(addr[3], value[3]);
+        mockSortedList.addElement(addr[4], value[4]);
+        mockSortedList.addElement(addr[5], value[5]);
+        mockSortedList.addElement(addr[6], value[6]);
+
+        DataPair[] memory result;
+
+        result = abi.decode(mockSortedList.getElementRange(1, 1), (DataPair[]));
+        assertEq(result.length, 1);
+        assertEq(result[0].addr, addr[6]);
+
+        result = abi.decode(mockSortedList.getElementRange(7, 7), (DataPair[]));
+        assertEq(result.length, 1);
+        assertEq(result[0].addr, addr[3]);
+
+        result = abi.decode(mockSortedList.getElementRange(3, 100), (DataPair[]));
+        assertEq(result.length, 5);
+        assertEq(result[0].addr, addr[2]);
+
+        result = abi.decode(mockSortedList.getElementRange(3, 6), (DataPair[]));
+        assertEq(result.length, 4);
+        assertEq(result[0].addr, addr[2]);
+
+        vm.expectRevert();
+        mockSortedList.getElementRange(0, 100);
+
+        vm.expectRevert();
+        mockSortedList.getElementRange(3, 2);
+    }
 
     function compare(address[7] memory expected) private view {
         DataPair[] memory result = abi.decode(mockSortedList.getAllElement(), (DataPair[]));
