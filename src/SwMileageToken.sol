@@ -9,15 +9,10 @@ import {Ownable} from "kaia-contracts/contracts/access/Ownable.sol";
 import {Context} from "kaia-contracts/contracts/utils/Context.sol";
 
 import {SortedList} from "./SortedList.sol";
+import {ISwMileageToken} from "./ISwMileageToken.sol";
 
 // TODO: new contract for multiple owner instead of `Ownable`
-contract SwMaileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Ownable, SortedList {
-    /// @dev satisfy KIP13
-    ///
-    function supportsInterface(bytes4 interfaceId) public view virtual override(KIP7, KIP7Burnable) returns (bool) {
-        return super.supportsInterface(interfaceId);
-    }
-
+contract SwMileageToken is Context, ISwMileageToken, IKIP7, KIP7, KIP7Burnable, Pausable, Ownable, SortedList {
     /// @dev contract constructor
     /// set KIP7 token name, symbol
     ///
@@ -47,11 +42,6 @@ contract SwMaileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Ownabl
         _mint(_account, _amount);
     }
 
-    // // only one owner
-    // function setAllowancesMax(address _account) public onlyOwner {
-    //     _approve(_account, owner, type(uint256).max);
-    // }
-
     /// @dev KIP7Burnable burnFrom
     /// bypass allowance check when msg.sender is owner
     /// @param account target account
@@ -63,7 +53,24 @@ contract SwMaileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Ownabl
         _burn(account, amount);
     }
 
-    function addElement(address addr, uint256 value) internal {
-        _addElement(addr, value);
+    // check is secure
+    function _afterTokenTransfer(address, /*from*/ address to, uint256 /*amount*/ ) internal override {
+        // TODO _update(..., INC) _update(..., DEC)
+        uint256 balance = balanceOf(to);
+        if (balance == 0) {
+            _removeElement(to);
+        } else {
+            _updateElement(to, balanceOf(to));
+        }
+        // if (from == address(0)) {
+        //      // mint
+        //     _updateElement(to, balanceOf(to));
+        // } else if (to == address(0)) {
+        //     // burn
+        // }
+    }
+
+    function rankingRange(uint256 from, uint256 to) external view returns (Student[] memory) {
+        return abi.decode(_getElementRange(from, to), (Student[]));
     }
 }

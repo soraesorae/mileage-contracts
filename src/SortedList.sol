@@ -13,10 +13,10 @@ abstract contract SortedList {
     }
 
     mapping(address => Node) private _list;
-    mapping(address => bool) private _alreadyParticipated;
+    mapping(address => bool) private _participated;
 
-    address private constant END_OF_LIST = address(0xbadbeef);
-    address private constant DUMMY = address(0xbeefbad);
+    address private constant END_OF_LIST = address(0xdeadbeef);
+    address private constant DUMMY = address(0x0badbeef);
     address private _head = END_OF_LIST;
 
     uint256 private _listLength = 0;
@@ -27,11 +27,14 @@ abstract contract SortedList {
         return _listLength;
     }
 
+    // alreadyparticipated or participted already
+    // function _isAlready
+
     /// @dev naive sorting solution
 
     function _addElement(address addr, uint256 value) internal virtual {
-        require(_alreadyParticipated[addr] == false, "duplicated");
-        _alreadyParticipated[addr] = true;
+        require(_participated[addr] == false, "duplicated");
+        _participated[addr] = true;
         if (_listLength == 0) {
             _list[addr] = Node(END_OF_LIST, value);
             _head = addr;
@@ -98,8 +101,12 @@ abstract contract SortedList {
 
     function _updateElement(address targetAddr, uint256 newValue) internal virtual {
         // delta? update_inc update_dec
-        require(_alreadyParticipated[targetAddr] == true, "not found");
-        require(_listLength > 0, "length = 0");
+        // require(_participated[targetAddr] == true, "not found");
+        // require(_listLength > 0, "length = 0");
+        if (_participated[targetAddr] == false) {
+            _addElement(targetAddr, newValue);
+            return;
+        }
         address ptr = _head;
         address prev = DUMMY;
 
@@ -117,7 +124,7 @@ abstract contract SortedList {
             _list[prev].next = _list[ptr].next;
         }
         delete _list[ptr];
-        delete _alreadyParticipated[ptr];
+        _participated[ptr] = false;
         --_listLength;
 
         _addElement(targetAddr, newValue);
@@ -163,5 +170,24 @@ abstract contract SortedList {
         //     _list[targetAddr].next = _list[afterPos].next;
         //     _list[afterPos].next = targetAddr;
         // }
+    }
+
+    function _removeElement(address targetAddr) public {
+        require(_participated[targetAddr] != false, "not found in the list");
+        require(_listLength > 0, "length = 0");
+
+        address ptr = _head;
+
+        while (ptr != END_OF_LIST) {
+            if (ptr == targetAddr) {
+                break;
+            }
+            ptr = _list[ptr].next;
+        }
+        require(ptr != END_OF_LIST, "not found");
+        _head = _list[ptr].next;
+        delete _list[ptr];
+        _participated[ptr] = false;
+        --_listLength;
     }
 }
