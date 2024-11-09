@@ -12,12 +12,17 @@ import {SortedList} from "./SortedList.sol";
 import {ISwMileageToken} from "./ISwMileageToken.sol";
 
 // TODO: new contract for multiple owner instead of `Ownable`
-contract SwMileageToken is Context, ISwMileageToken, IKIP7, KIP7, KIP7Burnable, Pausable, Ownable, SortedList {
+contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Ownable, SortedList {
+    struct Student {
+        address wallet;
+        uint256 balance;
+    }
     /// @dev contract constructor
     /// set KIP7 token name, symbol
     ///
     /// @param name_ token name
     /// @param symbol_ token symbol
+
     constructor(string memory name_, string memory symbol_) KIP7(name_, symbol_) {}
 
     /// @dev satisfy KIP13
@@ -42,20 +47,27 @@ contract SwMileageToken is Context, ISwMileageToken, IKIP7, KIP7, KIP7Burnable, 
         _mint(_account, _amount);
     }
 
+    function burn(uint256 amount) public override onlyOwner {}
+
     /// @dev KIP7Burnable burnFrom
     /// bypass allowance check when msg.sender is owner
     /// @param account target account
     /// @param amount amount
-    function burnFrom(address account, uint256 amount) public override whenNotPaused {
-        if (_msgSender() != owner()) {
-            _spendAllowance(account, _msgSender(), amount);
-        }
+    function burnFrom(address account, uint256 amount) public override onlyOwner whenNotPaused {
+        // if (_msgSender() != owner()) {
+        //     _spendAllowance(account, _msgSender(), amount);
+        // }
         _burn(account, amount);
+    }
+
+    function _beforeTokenTransfer(address from, address to, uint256 /*amount*/ ) internal pure override {
+        require(from == address(0) || to == address(0), "only mint or burn");
     }
 
     // check is secure
     function _afterTokenTransfer(address from, address to, uint256 /*amount*/ ) internal override {
         // TODO _update(..., INC) _update(..., DEC)
+        require(from == address(0) || to == address(0));
         if (from == address(0)) {
             // mint
             _updateElement(to, balanceOf(to));
