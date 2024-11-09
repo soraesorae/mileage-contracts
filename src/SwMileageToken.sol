@@ -54,20 +54,20 @@ contract SwMileageToken is Context, ISwMileageToken, IKIP7, KIP7, KIP7Burnable, 
     }
 
     // check is secure
-    function _afterTokenTransfer(address, /*from*/ address to, uint256 /*amount*/ ) internal override {
+    function _afterTokenTransfer(address from, address to, uint256 /*amount*/ ) internal override {
         // TODO _update(..., INC) _update(..., DEC)
-        uint256 balance = balanceOf(to);
-        if (balance == 0) {
-            _removeElement(to);
-        } else {
+        if (from == address(0)) {
+            // mint
             _updateElement(to, balanceOf(to));
+        } else if (to == address(0)) {
+            // burn
+            uint256 balance = balanceOf(from);
+            if (balance != 0) {
+                _updateElement(from, balance);
+            } else {
+                _removeElement(from);
+            }
         }
-        // if (from == address(0)) {
-        //      // mint
-        //     _updateElement(to, balanceOf(to));
-        // } else if (to == address(0)) {
-        //     // burn
-        // }
     }
 
     function rankingRange(uint256 from, uint256 to) external view returns (Student[] memory) {
