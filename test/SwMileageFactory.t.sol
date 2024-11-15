@@ -9,7 +9,7 @@ interface Ownable {
     function owner() external view returns (address);
 }
 
-contract SwMileageFactoryTst is Test {
+contract SwMileageFactoryTest is Test {
     // SwMileageToken public mileageToken;
     SwMileageTokenFactory public factory;
     address alice = address(0x1234);
@@ -27,6 +27,6 @@ contract SwMileageFactoryTst is Test {
         console.log(address(deployed));
         assertEq(deployed.name(), "AAAA");
         assertEq(deployed.symbol(), "BBBB");
-        assertEq(deployed.owner(), alice);
+        assertEq(deployed.owner(alice), true);
     }
 }

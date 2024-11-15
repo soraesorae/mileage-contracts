@@ -5,14 +5,14 @@ import {KIP7} from "kaia-contracts/contracts/KIP/token/KIP7/KIP7.sol";
 import {IKIP7} from "kaia-contracts/contracts/KIP/token/KIP7/IKIP7.sol";
 import {KIP7Burnable} from "kaia-contracts/contracts/KIP/token/KIP7/extensions/KIP7Burnable.sol";
 import {Pausable} from "kaia-contracts/contracts/security/Pausable.sol";
-import {Ownable} from "kaia-contracts/contracts/access/Ownable.sol";
+import {OwnableMulti} from "./OwnableMulti.sol";
 import {Context} from "kaia-contracts/contracts/utils/Context.sol";
 
 import {SortedList} from "./SortedList.sol";
 import {ISwMileageToken} from "./ISwMileageToken.sol";
 
 // TODO: new contract for multiple owner instead of `Ownable`
-contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Ownable, SortedList {
+contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, OwnableMulti, SortedList {
     struct Student {
         address wallet;
         uint256 balance;
@@ -23,6 +23,7 @@ contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Ownable
     /// @param name_ token name
     /// @param symbol_ token symbol
 
+    // constructor(string memory name_, string memory symbol_) KIP7(name_, symbol_) {}
     constructor(string memory name_, string memory symbol_) KIP7(name_, symbol_) {}
 
     /// @dev satisfy KIP13

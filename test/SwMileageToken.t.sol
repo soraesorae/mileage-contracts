@@ -21,7 +21,7 @@ contract SwMileageTokenTest is Test {
     }
 
     function test_Owner() public view {
-        assertEq(mileageToken.owner(), alice);
+        assertEq(mileageToken.owner(alice), true);
     }
 
     function test_MintFirstTime() public {
@@ -49,5 +49,42 @@ contract SwMileageTokenTest is Test {
 
         vm.prank(charlie);
         mileageToken.burnFrom(charlie, 1);
+    }
+
+    function test_AddOwnership() public {
+        vm.expectRevert("caller is not the owner");
+        vm.prank(bob);
+        mileageToken.mint(bob, 0x10);
+
+        vm.prank(alice);
+        mileageToken.addOwnership(bob);
+
+        vm.startPrank(bob);
+        mileageToken.mint(bob, 0x10);
+
+        assertEq(mileageToken.balanceOf(bob), 0x10);
+        vm.stopPrank();
+    }
+
+    function test_RemoveOwnership() public {
+        vm.expectRevert("caller is not the owner");
+        vm.prank(bob);
+        mileageToken.mint(bob, 0x10);
+
+        vm.prank(alice);
+        mileageToken.addOwnership(bob);
+
+        vm.startPrank(bob);
+        mileageToken.mint(bob, 0x10);
+
+        assertEq(mileageToken.balanceOf(bob), 0x10);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        mileageToken.removeOwnership(bob);
+
+        vm.expectRevert("caller is not the owner");
+        vm.prank(bob);
+        mileageToken.mint(bob, 0x10);
     }
 }
