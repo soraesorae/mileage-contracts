@@ -26,7 +26,7 @@ contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Ownable
     // constructor(string memory name_, string memory symbol_) KIP7(name_, symbol_) {}
     constructor(string memory name_, string memory symbol_) KIP7(name_, symbol_) {}
 
-    function decimals() public view override returns (uint8) {
+    function decimals() public pure override returns (uint8) {
         return 0;
     }
 
