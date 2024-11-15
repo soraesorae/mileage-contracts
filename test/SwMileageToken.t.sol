@@ -28,7 +28,7 @@ contract SwMileageTokenTest is Test {
         vm.prank(alice);
         mileageToken.mint(bob, 10);
         assertEq(mileageToken.balanceOf(bob), 10);
-        SwMileageToken.Student[] memory students = mileageToken.rankingRange(1, 1024);
+        SwMileageToken.Student[] memory students = mileageToken.getRankingRange(1, 1024);
         assertEq(students.length, 1);
         assertEq(students[0].wallet, bob);
         assertEq(students[0].balance, 10);
@@ -49,6 +49,36 @@ contract SwMileageTokenTest is Test {
 
         vm.prank(charlie);
         mileageToken.burnFrom(charlie, 1);
+    }
+
+    function test_GetRankingRange() public {
+        vm.startPrank(alice);
+        mileageToken.mint(alice, 0x1);
+        mileageToken.mint(bob, 0x10);
+        mileageToken.mint(charlie, 0x1000);
+        vm.stopPrank();
+
+        SwMileageToken.Student[] memory students1 = mileageToken.getRankingRange(1, 2);
+
+        assertEq(students1[0].wallet, charlie);
+        assertEq(students1[1].wallet, bob);
+
+        vm.prank(alice);
+        mileageToken.mint(alice, 0x10);
+
+        SwMileageToken.Student[] memory students2 = mileageToken.getRankingRange(1, 10);
+
+        assertEq(students2[0].wallet, charlie);
+        assertEq(students2[1].wallet, alice);
+        assertEq(students2[2].wallet, bob);
+
+        vm.prank(alice);
+        mileageToken.burnFrom(charlie, 0x1000);
+
+        SwMileageToken.Student[] memory students3 = mileageToken.getRankingRange(1, 10);
+
+        assertEq(students3[0].wallet, alice);
+        assertEq(students3[1].wallet, bob);
     }
 
     function test_AddOwnership() public {

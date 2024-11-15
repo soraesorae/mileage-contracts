@@ -83,7 +83,7 @@ contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Ownable
         }
     }
 
-    function rankingRange(uint256 from, uint256 to) external view returns (Student[] memory) {
+    function getRankingRange(uint256 from, uint256 to) external view returns (Student[] memory) {
         return abi.decode(_getElementRange(from, to), (Student[]));
     }
 }
