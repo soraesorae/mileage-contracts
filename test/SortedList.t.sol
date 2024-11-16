@@ -19,7 +19,7 @@ contract SortedListTest is BubbleSort, Test {
         mockSortedList = new MockSortedList();
     }
 
-    function test_AddElement() public {
+    function test_addElement() public {
         mockSortedList.addElement(address(0x1234), 0x1000);
     }
 
@@ -28,7 +28,7 @@ contract SortedListTest is BubbleSort, Test {
         mockSortedList.addElement(address(0xAAAA), 0x1);
     }
 
-    function test_GetAllElement() public {
+    function test_getAllElement() public {
         for (uint256 i = 0; i < 128; i++) {
             mockSortedList.addElement(address(uint160(127 - i)), i);
         }
@@ -39,7 +39,7 @@ contract SortedListTest is BubbleSort, Test {
         }
     }
 
-    function test_GetAllElementStablity() public {
+    function test_getAllElement_Stablity() public {
         address[] memory addr = new address[](7);
         uint256[] memory value = new uint256[](7);
         addr[0] = address(0x1);
@@ -81,7 +81,7 @@ contract SortedListTest is BubbleSort, Test {
         assertEq(result[6].addr, address(0x4));
     }
 
-    function test_GetElementRange() public {
+    function test_getElementRange() public {
         address[] memory addr = new address[](7);
         uint256[] memory value = new uint256[](7);
         addr[0] = address(0x1);
@@ -142,7 +142,7 @@ contract SortedListTest is BubbleSort, Test {
         }
     }
 
-    function test_UpdateElement() public {
+    function test_updateElement() public {
         uint256 n = 7;
         address[] memory addr = new address[](n);
         uint256[] memory value = new uint256[](n);
@@ -188,7 +188,7 @@ contract SortedListTest is BubbleSort, Test {
         // compare(expected);
     }
 
-    function testFuzz_GetAllElemnt(uint256[] memory values) public {
+    function testFuzz_getAllElemnt(uint256[] memory values) public {
         vm.assume(0 < values.length && values.length <= 100);
         address[] memory addr = new address[](values.length);
         for (uint256 i = 0; i < values.length; i++) {

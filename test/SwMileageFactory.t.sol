@@ -21,7 +21,7 @@ contract SwMileageFactoryTest is Test {
         console.log(address(factory));
     }
 
-    function test_Deploy() public {
+    function test_deploy() public {
         vm.prank(alice);
         SwMileageToken deployed = SwMileageToken(factory.deploy("AAAA", "BBBB"));
         console.log(address(deployed));

@@ -15,16 +15,16 @@ contract SwMileageTokenTest is Test {
         mileageToken = new SwMileageToken("SwMileageToken", "SMT");
     }
 
-    function test_Token() public view {
+    function test_token() public view {
         assertEq("SwMileageToken", mileageToken.name());
         assertEq("SMT", mileageToken.symbol());
     }
 
-    function test_Owner() public view {
+    function test_owner() public view {
         assertEq(mileageToken.owner(alice), true);
     }
 
-    function test_MintFirstTime() public {
+    function test_mint_FirstTime() public {
         vm.prank(alice);
         mileageToken.mint(bob, 10);
         assertEq(mileageToken.balanceOf(bob), 10);
@@ -34,7 +34,7 @@ contract SwMileageTokenTest is Test {
         assertEq(students[0].balance, 10);
     }
 
-    function test_BurnFromOwner() public {
+    function test_burnFrom_Owner() public {
         vm.startPrank(alice);
         mileageToken.mint(bob, 10);
         assertEq(mileageToken.allowance(bob, alice), 0);
@@ -43,7 +43,7 @@ contract SwMileageTokenTest is Test {
         vm.stopPrank();
     }
 
-    function testFail_BurnFromRegular() public {
+    function testFail_burnFrom_NotOwner() public {
         vm.prank(alice);
         mileageToken.mint(bob, 10);
 
@@ -51,7 +51,7 @@ contract SwMileageTokenTest is Test {
         mileageToken.burnFrom(charlie, 1);
     }
 
-    function test_GetRankingRange() public {
+    function test_getRankingRange() public {
         vm.startPrank(alice);
         mileageToken.mint(alice, 0x1);
         mileageToken.mint(bob, 0x10);
@@ -81,7 +81,7 @@ contract SwMileageTokenTest is Test {
         assertEq(students3[1].wallet, bob);
     }
 
-    function test_AddOwnership() public {
+    function test_addOwnership() public {
         vm.expectRevert("caller is not the owner");
         vm.prank(bob);
         mileageToken.mint(bob, 0x10);
@@ -96,7 +96,7 @@ contract SwMileageTokenTest is Test {
         vm.stopPrank();
     }
 
-    function test_RemoveOwnership() public {
+    function test_removeOwnership() public {
         vm.expectRevert("caller is not the owner");
         vm.prank(bob);
         mileageToken.mint(bob, 0x10);
