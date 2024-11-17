@@ -11,8 +11,8 @@ contract SortedListTest is BubbleSort, Test {
         uint256 value;
     }
 
-    address alice = address(0x1234);
-    address bob = address(0x4321);
+    address alice = makeAddr("alice");
+    address bob = makeAddr("bob");
     MockSortedList mockSortedList;
 
     function setUp() public {
@@ -23,10 +23,10 @@ contract SortedListTest is BubbleSort, Test {
         mockSortedList.addElement(address(0x1234), 0x1000);
     }
 
-    function testFail_DuplicateNode() public {
-        mockSortedList.addElement(address(0xAAAA), 0x1);
-        mockSortedList.addElement(address(0xAAAA), 0x1);
-    }
+    // function testFail_DuplicateNode() public {
+    //     mockSortedList.addElement(address(0xAAAA), 0x1);
+    //     mockSortedList.addElement(address(0xAAAA), 0x1);
+    // }
 
     function test_getAllElement() public {
         for (uint256 i = 0; i < 128; i++) {

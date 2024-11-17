@@ -12,7 +12,7 @@ interface Ownable {
 contract SwMileageFactoryTest is Test {
     // SwMileageToken public mileageToken;
     SwMileageTokenFactory public factory;
-    address alice = address(0x1234);
+    address alice = makeAddr("alice");
 
     function setUp() public {
         vm.prank(alice);
@@ -23,10 +23,10 @@ contract SwMileageFactoryTest is Test {
 
     function test_deploy() public {
         vm.prank(alice);
-        SwMileageToken deployed = SwMileageToken(factory.deploy("AAAA", "BBBB"));
+        SwMileageToken deployed = SwMileageToken(factory.deploy("SwMileageToken", "SMT"));
         console.log(address(deployed));
-        assertEq(deployed.name(), "AAAA");
-        assertEq(deployed.symbol(), "BBBB");
+        assertEq(deployed.name(), "SwMileageToken");
+        assertEq(deployed.symbol(), "SMT");
         assertEq(deployed.owner(alice), true);
     }
 }

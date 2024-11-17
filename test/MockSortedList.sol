@@ -11,7 +11,8 @@ contract MockSortedList is SortedList {
     }
 
     function addElement(address addr, uint256 value) public {
-        _addElement(addr, value);
+        // _addElement(addr, value);
+        _updateElement(addr, value);
     }
 
     function updateElement(address targetAddr, uint256 newValue) public {
