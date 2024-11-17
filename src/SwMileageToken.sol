@@ -72,7 +72,7 @@ contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Ownable
     // check is secure
     function _afterTokenTransfer(address from, address to, uint256 /*amount*/ ) internal override {
         // TODO _update(..., INC) _update(..., DEC)
-        require(from == address(0) || to == address(0));
+        // require(from == address(0) || to == address(0));
         if (from == address(0)) {
             // mint
             _updateElement(to, balanceOf(to));
