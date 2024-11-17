@@ -135,7 +135,9 @@ contract SortedListTest is BubbleSort, Test {
         mockSortedList.getElementRange(3, 2);
     }
 
-    function compare(address[7] memory expected) private view {
+    function compare(
+        address[7] memory expected
+    ) private view {
         DataPair[] memory result = abi.decode(mockSortedList.getAllElement(), (DataPair[]));
         for (uint256 i = 0; i < 7; i++) {
             assertEq(result[i].addr, expected[i]);
@@ -188,7 +190,9 @@ contract SortedListTest is BubbleSort, Test {
         // compare(expected);
     }
 
-    function testFuzz_getAllElemnt(uint256[] memory values) public {
+    function testFuzz_getAllElemnt(
+        uint256[] memory values
+    ) public {
         vm.assume(0 < values.length && values.length <= 100);
         address[] memory addr = new address[](values.length);
         for (uint256 i = 0; i < values.length; i++) {

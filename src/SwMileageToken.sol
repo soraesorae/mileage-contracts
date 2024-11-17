@@ -32,7 +32,9 @@ contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Ownable
 
     /// @dev satisfy KIP13
     ///
-    function supportsInterface(bytes4 interfaceId) public view virtual override(KIP7, KIP7Burnable) returns (bool) {
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view virtual override (KIP7, KIP7Burnable) returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
@@ -52,7 +54,11 @@ contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Ownable
         _mint(_account, _amount);
     }
 
-    function burn(uint256 amount) public override onlyOwner {}
+    /// @dev prevent token holders to destory their own tokens
+    ///
+    function burn(
+        uint256 amount
+    ) public override {} // empty
 
     /// @dev KIP7Burnable burnFrom
     /// bypass allowance check when msg.sender is owner

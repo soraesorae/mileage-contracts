@@ -173,7 +173,9 @@ abstract contract SortedList {
         emit UpdateElement(target, prevValue, newValue);
     }
 
-    function _removeElement(address target) internal {
+    function _removeElement(
+        address target
+    ) internal {
         require(_participated[target] != false, "not found in the list");
         require(_listLength > 0, "length = 0");
 
