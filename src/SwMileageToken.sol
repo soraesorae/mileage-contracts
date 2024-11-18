@@ -47,11 +47,11 @@ contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Admin, 
 
     /// @dev mint mileage token
     ///
-    /// @param _account `to` account
-    /// @param _amount token amount
+    /// @param account `to` account
+    /// @param amount token amount
     ///
-    function mint(address _account, uint256 _amount) public onlyAdmin whenNotPaused {
-        _mint(_account, _amount);
+    function mint(address account, uint256 amount) public onlyAdmin whenNotPaused {
+        _mint(account, amount);
     }
 
     /// @dev prevent token holders to destory their own tokens
