@@ -26,6 +26,10 @@ abstract contract SortedList {
 
     constructor() {}
 
+    function getListLength() public view virtual returns (uint256) {
+        return _getListLength();
+    }
+
     function _getListLength() internal view virtual returns (uint256) {
         return _listLength;
     }
@@ -87,7 +91,7 @@ abstract contract SortedList {
         DataPair[] memory output = new DataPair[](to - from + 1);
         while (ptr != END_OF_LIST) {
             if (from <= listIndex) {
-                output[outputIndex] = DataPair(ptr, _list[ptr].value);
+                output[outputIndex] = DataPair({addr: ptr, value: _list[ptr].value});
                 ++outputIndex;
                 if (listIndex >= to) {
                     break;

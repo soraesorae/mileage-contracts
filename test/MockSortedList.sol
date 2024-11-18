@@ -16,7 +16,7 @@ contract MockSortedList is SortedList {
     }
 
     function getAllElement() public view returns (DataPair[] memory) {
-        return _getAllElement();
+        return abi.decode(_getAllElement(), (DataPair[]));
     }
 
     function getElementRange(uint256 from, uint256 to) public view returns (bytes memory) {
