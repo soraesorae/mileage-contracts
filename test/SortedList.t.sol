@@ -2,15 +2,11 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
+import {SortedList} from "../src/SortedList.sol";
 import {MockSortedList} from "./MockSortedList.sol";
 import {BubbleSort} from "./utils/BubbleSort.sol";
 
 contract SortedListTest is BubbleSort, Test {
-    struct DataPair {
-        address addr;
-        uint256 value;
-    }
-
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
     MockSortedList mockSortedList;
@@ -32,7 +28,7 @@ contract SortedListTest is BubbleSort, Test {
         for (uint256 i = 0; i < 128; i++) {
             mockSortedList.addElement(address(uint160(127 - i)), i);
         }
-        DataPair[] memory result = abi.decode(mockSortedList.getAllElement(), (DataPair[]));
+        SortedList.DataPair[] memory result = mockSortedList.getAllElement();
         for (uint256 i = 0; i < 128; i++) {
             assertEq(result[i].addr, address(uint160(i)));
             assertEq(result[i].value, 127 - i);
@@ -68,7 +64,7 @@ contract SortedListTest is BubbleSort, Test {
         mockSortedList.addElement(addr[5], value[5]);
         mockSortedList.addElement(addr[6], value[6]);
 
-        DataPair[] memory result = abi.decode(mockSortedList.getAllElement(), (DataPair[]));
+        SortedList.DataPair[] memory result = mockSortedList.getAllElement();
 
         // expected address list = [7, 1, 3, 5, 6, 2, 4]
 
@@ -81,7 +77,9 @@ contract SortedListTest is BubbleSort, Test {
         assertEq(result[6].addr, address(0x4));
     }
 
-    function test_getElementRange() public {
+    // function test_getElementRange_0w()
+
+    function test_getElementRange1() public {
         address[] memory addr = new address[](7);
         uint256[] memory value = new uint256[](7);
         addr[0] = address(0x1);
@@ -110,21 +108,20 @@ contract SortedListTest is BubbleSort, Test {
         mockSortedList.addElement(addr[5], value[5]);
         mockSortedList.addElement(addr[6], value[6]);
 
-        DataPair[] memory result;
-
-        result = abi.decode(mockSortedList.getElementRange(1, 1), (DataPair[]));
+        // SortedList.DataPair[] memory result = bytes32ToDataPair(mockSortedList.getElementRange(1, 1));
+        SortedList.DataPair[] memory result = abi.decode(mockSortedList.getElementRange(1, 1), (SortedList.DataPair[]));
         assertEq(result.length, 1);
         assertEq(result[0].addr, addr[6]);
 
-        result = abi.decode(mockSortedList.getElementRange(7, 7), (DataPair[]));
+        result = abi.decode(mockSortedList.getElementRange(7, 7), (SortedList.DataPair[]));
         assertEq(result.length, 1);
         assertEq(result[0].addr, addr[3]);
 
-        result = abi.decode(mockSortedList.getElementRange(3, 100), (DataPair[]));
+        result = abi.decode(mockSortedList.getElementRange(3, 100), (SortedList.DataPair[]));
         assertEq(result.length, 5);
         assertEq(result[0].addr, addr[2]);
 
-        result = abi.decode(mockSortedList.getElementRange(3, 6), (DataPair[]));
+        result = abi.decode(mockSortedList.getElementRange(3, 6), (SortedList.DataPair[]));
         assertEq(result.length, 4);
         assertEq(result[0].addr, addr[2]);
 
@@ -138,7 +135,7 @@ contract SortedListTest is BubbleSort, Test {
     function compare(
         address[7] memory expected
     ) private view {
-        DataPair[] memory result = abi.decode(mockSortedList.getAllElement(), (DataPair[]));
+        SortedList.DataPair[] memory result = mockSortedList.getAllElement();
         for (uint256 i = 0; i < 7; i++) {
             assertEq(result[i].addr, expected[i]);
         }
@@ -205,7 +202,7 @@ contract SortedListTest is BubbleSort, Test {
 
         address[] memory sorted = sort();
 
-        DataPair[] memory result = abi.decode(mockSortedList.getAllElement(), (DataPair[]));
+        SortedList.DataPair[] memory result = mockSortedList.getAllElement();
 
         for (uint256 i = 0; i < addr.length; i++) {
             assertEq(result[i].addr, sorted[i]);

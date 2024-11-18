@@ -27,6 +27,6 @@ contract SwMileageFactoryTest is Test {
         console.log(address(deployed));
         assertEq(deployed.name(), "SwMileageToken");
         assertEq(deployed.symbol(), "SMT");
-        assertEq(deployed.owner(alice), true);
+        assertEq(deployed.isAdmin(alice), true);
     }
 }
