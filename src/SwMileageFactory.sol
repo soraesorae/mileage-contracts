@@ -9,20 +9,11 @@ contract SwMileageTokenFactory {
 
     constructor() {}
 
-<<<<<<< HEAD
-    function deploy(string memory _name, string memory _symbol) external returns (address) {
-        SwMileageToken token = new SwMileageToken(_name, _symbol);
-        token.addOwnership(msg.sender);
-        token.removeOwnership(address(this));
-        emit MileageTokenCreated(address(token));
-        return address(token);
-=======
     function deploy(string memory name, string memory symbol) external returns (address) {
         SwMileageToken mileageToken = new SwMileageToken(name, symbol);
         mileageToken.addAdmin(msg.sender);
         mileageToken.removeAdmin(address(this));
         emit CreateMileageToken(address(mileageToken));
         return address(mileageToken);
->>>>>>> 8edc740 (Refactor factory contarct)
     }
 }
