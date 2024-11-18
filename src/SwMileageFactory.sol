@@ -19,8 +19,8 @@ contract SwMileageTokenFactory {
 =======
     function deploy(string memory name, string memory symbol) external returns (address) {
         SwMileageToken mileageToken = new SwMileageToken(name, symbol);
-        mileageToken.addOwnership(msg.sender);
-        mileageToken.removeOwnership(address(this));
+        mileageToken.addAdmin(msg.sender);
+        mileageToken.removeAdmin(address(this));
         emit CreateMileageToken(address(mileageToken));
         return address(mileageToken);
 >>>>>>> 8edc740 (Refactor factory contarct)
