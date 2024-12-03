@@ -44,8 +44,10 @@ abstract contract Admin is Context {
     function _addAdmin(
         address account
     ) internal virtual {
-        _admin[account] = true;
-        emit AddAdministrator(account);
+        if (!_admin[account]) {
+            _admin[account] = true;
+            emit AddAdministrator(account);
+        }
     }
 
     function _removeAdmin(
