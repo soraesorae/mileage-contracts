@@ -17,6 +17,7 @@ abstract contract SortedList {
 
     address private constant END_OF_LIST = address(0xdeadbeef);
     address private constant DUMMY = address(0x0badbeef);
+    address private constant NOT_FOUND = address(0x04040404);
     address private _head = END_OF_LIST;
 
     uint256 private _listLength = 0;
@@ -32,6 +33,25 @@ abstract contract SortedList {
 
     function _getListLength() internal view virtual returns (uint256) {
         return _listLength;
+    }
+
+    // function getListNode() internal returns (Node memory) {}
+
+    function _push(address addr, uint256 value) internal virtual {
+        require(_participated[addr] == false);
+        _list[addr] = Node({next: _head, value: value});
+        _head = addr;
+        _participated[addr] = true;
+        ++_listLength;
+    }
+
+    function _pop() internal virtual {
+        require(_head != END_OF_LIST);
+        address next = _list[_head].next;
+        _participated[_head] = false;
+        delete _list[_head];
+        _head = next;
+        --_listLength;
     }
 
     // alreadyparticipated or participted already
@@ -104,76 +124,91 @@ abstract contract SortedList {
         return abi.encode(output);
     }
 
-    // find position after update
-    // n = 1
-    // if (_listLength == 1) {
-    //     _list[ptr].value = newValue;
-    //     return;
-    // }
+    function _getElementIndex(
+        address account
+    ) internal virtual returns (int256) {
+        address ptr = _head;
+        int256 i = 1;
+        while (ptr != END_OF_LIST) {
+            if (ptr == account) {
+                return i;
+            }
+            ++i;
+        }
+        return -1;
+    }
 
-    // if (ptr == targetAddr) {
+    // check sort
 
-    // }
+    // event Log(address indexed target, uint256 indexed value, address indexed next, address h);
 
-    // address beforePos = address(0x0);
-    // address afterPos = address(0x0);
-
-    // bool chkBeforePos = false;
-    // bool chkAfterPos = false;
-
-    // while (chkBeforePos && chkAfterPos == false) {
-    //     // if ptr == EOL
-    //     address next = _list[ptr].next;
-    //     if (next == targetAddr) {
-    //         beforePos = ptr;
-    //         chkBeforePos = true;
+    // function check() private {
+    //     address ptr = _head;
+    //     DataPair[] memory arr = new DataPair[](_listLength);
+    //     uint256 i = 0;
+    //     while (ptr != END_OF_LIST) {
+    //         emit Log(ptr, _list[ptr].value, _list[ptr].next, _head);
+    //         arr[i] = DataPair(ptr, _list[ptr].value);
+    //         ptr = _list[ptr].next;
+    //         ++i;
     //     }
-    //     if (_list[next].value < newValue) {
-    //         afterPos = ptr;
-    //         chkAfterPos = true;
-    //     }
-    //     ptr = next;
-    // }
-
-    // if (afterPos == beforePos) {
-    //     // trivial case
-    //     _list[targetAddr].value = newValue;
-    // } else if (targetAddr == afterPos) {
-    //     _list[targetAddr].value = newValue;
-    // } else {
-    //     _list[beforePos].next = _list[targetAddr].next;
-    //     _list[targetAddr].next = _list[afterPos].next;
-    //     _list[afterPos].next = targetAddr;
     // }
 
     function _updateElement(address target, uint256 newValue) internal virtual {
-        // delta? update_inc update_dec
-        // require(_participated[targetAddr] == true, "not found");
-        // require(_listLength > 0, "length = 0");
         uint256 prevValue = 0;
         if (_participated[target]) {
+            // y <- x: between y and x
             address ptr = _head;
             address prev = DUMMY;
+            address currentPos = NOT_FOUND; // .. <- [target] <- [currentPos] <- ..
+            address nextPos = NOT_FOUND; // .. <- [here] <- [nextPos] <- ..
 
             while (ptr != END_OF_LIST) {
-                if (ptr == target) {
+                if (currentPos == NOT_FOUND && ptr == target) {
+                    currentPos = prev;
+                }
+                if (nextPos == NOT_FOUND && _list[ptr].value < newValue) {
+                    nextPos = prev;
+                }
+                if (currentPos != NOT_FOUND && nextPos != NOT_FOUND) {
                     break;
                 }
                 prev = ptr;
                 ptr = _list[ptr].next;
             }
-            require(ptr != END_OF_LIST, "not found");
-            prevValue = _list[ptr].value;
-            if (prev == DUMMY) {
-                _head = _list[ptr].next;
-            } else {
-                _list[prev].next = _list[ptr].next;
+
+            require(currentPos != NOT_FOUND, "current position not found");
+            prevValue = _list[target].value;
+
+            if (nextPos == NOT_FOUND) {
+                nextPos = prev;
             }
-            delete _list[ptr];
-            _participated[ptr] = false;
-            --_listLength;
+
+            if (nextPos == DUMMY || currentPos == DUMMY) {
+                if (nextPos == DUMMY && currentPos == DUMMY) { // not change
+                } else if (currentPos == DUMMY) {
+                    _head = _list[target].next;
+                    _list[target].next = _list[nextPos].next;
+                    _list[nextPos].next = target;
+                } else {
+                    // nextPos == DUMMY
+                    _list[currentPos].next = _list[target].next;
+                    _list[target].next = _head;
+                    _head = target;
+                }
+            } else {
+                // 1. not moved
+                if (currentPos == nextPos || _list[currentPos].next == nextPos) {} else {
+                    _list[currentPos].next = _list[target].next;
+                    _list[target].next = _list[nextPos].next;
+                    _list[nextPos].next = target;
+                }
+            }
+            _list[target].value = newValue;
+            // check();
+        } else {
+            _addElement(target, newValue);
         }
-        _addElement(target, newValue);
         emit UpdateElement(target, prevValue, newValue);
     }
 
@@ -184,15 +219,22 @@ abstract contract SortedList {
         require(_listLength > 0, "length = 0");
 
         address ptr = _head;
+        address prev = DUMMY;
 
         while (ptr != END_OF_LIST) {
             if (ptr == target) {
                 break;
             }
+            prev = ptr;
             ptr = _list[ptr].next;
         }
         require(ptr != END_OF_LIST, "not found");
-        _head = _list[ptr].next;
+
+        if (prev == DUMMY) {
+            _head = _list[ptr].next;
+        } else {
+            _list[prev].next = _list[ptr].next;
+        }
         delete _list[ptr];
         _participated[ptr] = false;
         --_listLength;
