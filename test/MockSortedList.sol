@@ -11,8 +11,8 @@ contract MockSortedList is SortedList {
         _updateElement(addr, value);
     }
 
-    function updateElement(address targetAddr, uint256 newValue) public {
-        _updateElement(targetAddr, newValue);
+    function updateElement(address addr, uint256 newValue) public {
+        _updateElement(addr, newValue);
     }
 
     function getAllElement() public view returns (DataPair[] memory) {
@@ -21,5 +21,19 @@ contract MockSortedList is SortedList {
 
     function getElementRange(uint256 from, uint256 to) public view returns (bytes memory) {
         return _getElementRange(from, to);
+    }
+
+    function removeElement(
+        address target
+    ) public {
+        _removeElement(target);
+    }
+
+    function push(address addr, uint256 value) public {
+        _push(addr, value);
+    }
+
+    function pop() public {
+        _pop();
     }
 }
