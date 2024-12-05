@@ -22,3 +22,9 @@ docs/
 
 # vscode
 .vscode
+
+bytecode.txt
+bytecode_factory.txt
+
+abi.json
+abi_factory.json
