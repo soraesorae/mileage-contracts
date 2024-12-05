@@ -6,7 +6,7 @@ import {SwMileageToken} from "./SwMileageToken.sol";
 
 // https://github.com/Uniswap/v2-core/blob/master/contracts/UniswapV2Factory.sol
 contract SwMileageTokenFactory {
-    event MileageTokenCreated(address tokenAddress);
+    event MileageTokenCreated(address indexed tokenAddress);
 
     constructor() {}
 
