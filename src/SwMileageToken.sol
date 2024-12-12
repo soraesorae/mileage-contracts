@@ -57,8 +57,10 @@ contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Admin, 
     /// @dev prevent token holders to destory their own tokens
     ///
     function burn(
-        uint256 amount
-    ) public pure override {}
+        uint256 /* amount */
+    ) public pure override {
+        require(false, "Blocked");
+    }
     ////
 
     function _approve(address, /* owner */ address, /* spender */ uint256 /* amount */ ) internal pure override {
