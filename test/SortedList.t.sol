@@ -9,6 +9,7 @@ import {BubbleSort} from "./utils/BubbleSort.sol";
 contract SortedListTest is BubbleSort, Test {
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
+    address charlie = makeAddr("charlie");
     MockSortedList mockSortedList;
 
     function setUp() public {
@@ -108,28 +109,218 @@ contract SortedListTest is BubbleSort, Test {
         mockSortedList.addElement(addr[5], value[5]);
         mockSortedList.addElement(addr[6], value[6]);
 
-        // SortedList.DataPair[] memory result = bytes32ToDataPair(mockSortedList.getElementRange(1, 1));
-        SortedList.DataPair[] memory result = abi.decode(mockSortedList.getElementRange(1, 1), (SortedList.DataPair[]));
-        assertEq(result.length, 1);
-        assertEq(result[0].addr, addr[6]);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(1, 1), (SortedList.DataPair[]));
+            assertEq(result.length, 1);
+            assertEq(result[0].addr, addr[6]);
+        }
 
-        result = abi.decode(mockSortedList.getElementRange(7, 7), (SortedList.DataPair[]));
-        assertEq(result.length, 1);
-        assertEq(result[0].addr, addr[3]);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(7, 7), (SortedList.DataPair[]));
+            assertEq(result.length, 1);
+            assertEq(result[0].addr, addr[3]);
+        }
 
-        result = abi.decode(mockSortedList.getElementRange(3, 100), (SortedList.DataPair[]));
-        assertEq(result.length, 5);
-        assertEq(result[0].addr, addr[2]);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(3, 100), (SortedList.DataPair[]));
+            assertEq(result.length, 5);
+            assertEq(result[0].addr, addr[2]);
+        }
 
-        result = abi.decode(mockSortedList.getElementRange(3, 6), (SortedList.DataPair[]));
-        assertEq(result.length, 4);
-        assertEq(result[0].addr, addr[2]);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(3, 6), (SortedList.DataPair[]));
+            assertEq(result.length, 4);
+            assertEq(result[0].addr, addr[2]);
+        }
 
         vm.expectRevert();
         mockSortedList.getElementRange(0, 100);
 
         vm.expectRevert();
         mockSortedList.getElementRange(3, 2);
+    }
+
+    function test_getElementRange_From0() public {
+        vm.expectRevert("from == 0");
+        mockSortedList.getElementRange(0, 0);
+    }
+
+    function test_getElementRange_GreaterThanLength() public view {
+        SortedList.DataPair[] memory result = abi.decode(mockSortedList.getElementRange(1, 1), (SortedList.DataPair[]));
+        assertEq(result.length, 0);
+    }
+
+    function test_getElementRange_FromGreaterThanTo() public {
+        mockSortedList.addElement(alice, 0x10);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(1, 1), (SortedList.DataPair[]));
+            assertEq(result.length, 1);
+            assertEq(result[0].addr, alice);
+        }
+
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(1, 2), (SortedList.DataPair[]));
+            assertEq(result.length, 1);
+            assertEq(result[0].addr, alice);
+        }
+
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(2, 5), (SortedList.DataPair[]));
+            assertEq(result.length, 0);
+        }
+
+        {
+            vm.expectRevert("to < from");
+            mockSortedList.getElementRange(2, 1);
+        }
+    }
+
+    function test_getElementRange_From_two() public {
+        mockSortedList.addElement(alice, 0x10);
+        mockSortedList.addElement(bob, 0x0f);
+        mockSortedList.addElement(charlie, 0x0e);
+
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(2, 5), (SortedList.DataPair[]));
+            assertEq(result.length, 2);
+            assertEq(result[0].addr, bob);
+            assertEq(result[0].value, 0xf);
+            assertEq(result[1].addr, charlie);
+            assertEq(result[1].value, 0x0e);
+        }
+
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(3, 3), (SortedList.DataPair[]));
+            assertEq(result.length, 1);
+            assertEq(result[0].addr, charlie);
+            assertEq(result[0].value, 0x0e);
+        }
+
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(4, 10), (SortedList.DataPair[]));
+            assertEq(result.length, 0);
+        }
+    }
+
+    function test_updateElement_Inc_NotMoved() public {
+        mockSortedList.addElement(alice, 20);
+        mockSortedList.addElement(bob, 15);
+        mockSortedList.addElement(charlie, 10);
+
+        mockSortedList.updateElement(alice, 16);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(1, 20), (SortedList.DataPair[]));
+            assertEq(result.length, 3);
+        }
+    }
+
+    function test_updateElement_Inc() public {
+        mockSortedList.addElement(alice, 20);
+        mockSortedList.updateElement(alice, 30);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(1, 1), (SortedList.DataPair[]));
+            assertEq(result.length, 1);
+        }
+    }
+
+    function test_updateElement_DecZero1() public {
+        mockSortedList.addElement(alice, 20);
+        mockSortedList.addElement(alice, 0);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(1, 2), (SortedList.DataPair[]));
+            assertEq(result.length, 1);
+            assertEq(result[0].addr, alice);
+            assertEq(result[0].value, 0);
+        }
+    }
+
+    function test_updateElement_DecZero2() public {
+        mockSortedList.addElement(alice, 20);
+        mockSortedList.addElement(bob, 20);
+        mockSortedList.updateElement(alice, 0);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(1, 2), (SortedList.DataPair[]));
+            assertEq(result.length, 2);
+            assertEq(result[0].addr, bob);
+            assertEq(result[0].value, 20);
+            assertEq(result[1].addr, alice);
+            assertEq(result[1].value, 0);
+        }
+    }
+
+    function test_updateElement_Dec_NotMoved() public {
+        mockSortedList.addElement(alice, 20);
+        mockSortedList.addElement(bob, 15);
+        mockSortedList.addElement(charlie, 10);
+
+        mockSortedList.updateElement(bob, 13);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(1, 20), (SortedList.DataPair[]));
+            assertEq(result.length, 3);
+            assertEq(result[0].addr, alice);
+            assertEq(result[0].value, 20);
+            assertEq(result[1].addr, bob);
+            assertEq(result[1].value, 13);
+            assertEq(result[2].addr, charlie);
+            assertEq(result[2].value, 10);
+        }
+        mockSortedList.updateElement(bob, 0);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(1, 20), (SortedList.DataPair[]));
+            assertEq(result.length, 3);
+            assertEq(result[0].addr, alice);
+            assertEq(result[0].value, 20);
+            assertEq(result[1].addr, charlie);
+            assertEq(result[1].value, 10);
+            assertEq(result[2].addr, bob);
+            assertEq(result[2].value, 0);
+        }
+    }
+
+    function test_updateElement_DecHead() public {
+        mockSortedList.addElement(alice, 20);
+        mockSortedList.addElement(bob, 15);
+        mockSortedList.addElement(charlie, 10);
+
+        mockSortedList.updateElement(alice, 13);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(2, 2), (SortedList.DataPair[]));
+            assertEq(result.length, 1);
+            assertEq(result[0].addr, alice);
+            assertEq(result[0].value, 13);
+        }
+    }
+
+    function test_updateElement_IncHead() public {
+        mockSortedList.addElement(alice, 20);
+        mockSortedList.addElement(bob, 15);
+        mockSortedList.addElement(charlie, 10);
+
+        mockSortedList.updateElement(alice, 21);
+        {
+            SortedList.DataPair[] memory result =
+                abi.decode(mockSortedList.getElementRange(1, 1), (SortedList.DataPair[]));
+            assertEq(result.length, 1);
+            assertEq(result[0].addr, alice);
+            assertEq(result[0].value, 21);
+        }
     }
 
     function compare(
@@ -204,25 +395,29 @@ contract SortedListTest is BubbleSort, Test {
         mockSortedList.push(z, 10);
         mockSortedList.push(w, 10);
 
-        SortedList.DataPair[] memory d = mockSortedList.getAllElement();
+        {
+            SortedList.DataPair[] memory d = mockSortedList.getAllElement();
 
-        assertEq(d.length, 4);
+            assertEq(d.length, 4);
 
-        assertEq(d[0].addr, w);
-        assertEq(d[1].addr, z);
-        assertEq(d[2].addr, y);
-        assertEq(d[3].addr, x);
+            assertEq(d[0].addr, w);
+            assertEq(d[1].addr, z);
+            assertEq(d[2].addr, y);
+            assertEq(d[3].addr, x);
+        }
 
         mockSortedList.updateElement(z, 10);
 
-        SortedList.DataPair[] memory d2 = mockSortedList.getAllElement();
+        {
+            SortedList.DataPair[] memory d2 = mockSortedList.getAllElement();
 
-        assertEq(d2.length, 4);
+            assertEq(d2.length, 4);
 
-        assertEq(d2[0].addr, w);
-        assertEq(d2[1].addr, y);
-        assertEq(d2[2].addr, x);
-        assertEq(d2[3].addr, z);
+            assertEq(d2[0].addr, w);
+            assertEq(d2[1].addr, y);
+            assertEq(d2[2].addr, x);
+            assertEq(d2[3].addr, z);
+        }
     }
 
     function test_updateElement_SmallN_one() public {
@@ -266,48 +461,56 @@ contract SortedListTest is BubbleSort, Test {
         mockSortedList.push(x, 10);
         mockSortedList.updateElement(y, 5);
 
-        SortedList.DataPair[] memory d = mockSortedList.getAllElement();
+        {
+            SortedList.DataPair[] memory d = mockSortedList.getAllElement();
 
-        assertEq(mockSortedList.getListLength(), 2);
-        assertEq(d.length, 2);
+            assertEq(mockSortedList.getListLength(), 2);
+            assertEq(d.length, 2);
 
-        assertEq(d[0].addr, x);
-        assertEq(d[0].value, 10);
-        assertEq(d[1].addr, y);
-        assertEq(d[1].value, 5);
+            assertEq(d[0].addr, x);
+            assertEq(d[0].value, 10);
+            assertEq(d[1].addr, y);
+            assertEq(d[1].value, 5);
+        }
 
         mockSortedList.removeElement(y);
 
-        SortedList.DataPair[] memory d2 = mockSortedList.getAllElement();
+        {
+            SortedList.DataPair[] memory d2 = mockSortedList.getAllElement();
 
-        assertEq(mockSortedList.getListLength(), 1);
-        assertEq(d2.length, 1);
+            assertEq(mockSortedList.getListLength(), 1);
+            assertEq(d2.length, 1);
 
-        assertEq(d2[0].addr, x);
-        assertEq(d2[0].value, 10);
-
+            assertEq(d2[0].addr, x);
+            assertEq(d2[0].value, 10);
+        }
         mockSortedList.removeElement(x);
+        {
+            SortedList.DataPair[] memory d3 = mockSortedList.getAllElement();
 
-        SortedList.DataPair[] memory d3 = mockSortedList.getAllElement();
-
-        assertEq(mockSortedList.getListLength(), 0);
-        assertEq(d3.length, 0);
+            assertEq(mockSortedList.getListLength(), 0);
+            assertEq(d3.length, 0);
+        }
 
         mockSortedList.updateElement(y, 16);
-        SortedList.DataPair[] memory d4 = mockSortedList.getAllElement();
-        assertEq(mockSortedList.getListLength(), 1);
-        assertEq(d4.length, 1);
-        assertEq(d4[0].addr, y);
-        assertEq(d4[0].value, 16);
+        {
+            SortedList.DataPair[] memory d4 = mockSortedList.getAllElement();
+            assertEq(mockSortedList.getListLength(), 1);
+            assertEq(d4.length, 1);
+            assertEq(d4[0].addr, y);
+            assertEq(d4[0].value, 16);
+        }
 
         mockSortedList.updateElement(x, 10);
-        SortedList.DataPair[] memory d5 = mockSortedList.getAllElement();
-        assertEq(mockSortedList.getListLength(), 2);
-        assertEq(d5.length, 2);
-        assertEq(d5[0].addr, y);
-        assertEq(d5[0].value, 16);
-        assertEq(d5[0].addr, y);
-        assertEq(d5[0].value, 16);
+        {
+            SortedList.DataPair[] memory d5 = mockSortedList.getAllElement();
+            assertEq(mockSortedList.getListLength(), 2);
+            assertEq(d5.length, 2);
+            assertEq(d5[0].addr, y);
+            assertEq(d5[0].value, 16);
+            assertEq(d5[0].addr, y);
+            assertEq(d5[0].value, 16);
+        }
     }
 
     function test_removeElement_SmallN_two() public {
@@ -318,25 +521,29 @@ contract SortedListTest is BubbleSort, Test {
         mockSortedList.updateElement(y, 2);
         mockSortedList.updateElement(z, 3);
 
-        SortedList.DataPair[] memory d1 = mockSortedList.getAllElement();
-        assertEq(mockSortedList.getListLength(), 3);
-        assertEq(d1.length, 3);
-        assertEq(d1[0].addr, z);
-        assertEq(d1[0].value, 3);
-        assertEq(d1[1].addr, y);
-        assertEq(d1[1].value, 2);
-        assertEq(d1[2].addr, x);
-        assertEq(d1[2].value, 1);
+        {
+            SortedList.DataPair[] memory d1 = mockSortedList.getAllElement();
+            assertEq(mockSortedList.getListLength(), 3);
+            assertEq(d1.length, 3);
+            assertEq(d1[0].addr, z);
+            assertEq(d1[0].value, 3);
+            assertEq(d1[1].addr, y);
+            assertEq(d1[1].value, 2);
+            assertEq(d1[2].addr, x);
+            assertEq(d1[2].value, 1);
+        }
 
         mockSortedList.removeElement(y);
 
-        SortedList.DataPair[] memory d2 = mockSortedList.getAllElement();
-        assertEq(mockSortedList.getListLength(), 2);
-        assertEq(d2.length, 2);
-        assertEq(d2[0].addr, z);
-        assertEq(d2[0].value, 3);
-        assertEq(d2[1].addr, x);
-        assertEq(d2[1].value, 1);
+        {
+            SortedList.DataPair[] memory d2 = mockSortedList.getAllElement();
+            assertEq(mockSortedList.getListLength(), 2);
+            assertEq(d2.length, 2);
+            assertEq(d2[0].addr, z);
+            assertEq(d2[0].value, 3);
+            assertEq(d2[1].addr, x);
+            assertEq(d2[1].value, 1);
+        }
     }
 
     function testFuzz_getAllElemnt(

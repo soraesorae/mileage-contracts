@@ -54,38 +54,6 @@ abstract contract SortedList {
         --_listLength;
     }
 
-    // alreadyparticipated or participted already
-    // function _isAlready
-
-    /// @dev naive sorting solution
-
-    function _addElement(address addr, uint256 value) private {
-        require(_participated[addr] == false, "duplicated");
-        _participated[addr] = true;
-        if (_listLength == 0) {
-            _list[addr] = Node(END_OF_LIST, value);
-            _head = addr;
-        } else {
-            address ptr = _head;
-
-            if (_list[ptr].value < value) {
-                _list[addr] = Node(ptr, value);
-                _head = addr;
-            } else {
-                while (true) {
-                    address next_node = _list[ptr].next;
-                    if (next_node == END_OF_LIST || _list[next_node].value < value) {
-                        _list[addr] = Node(next_node, value);
-                        _list[ptr].next = addr;
-                        break;
-                    }
-                    ptr = next_node;
-                }
-            }
-        }
-        ++_listLength;
-    }
-
     function _getAllElement() internal view virtual returns (bytes memory) {
         address ptr = _head;
         DataPair[] memory arr = new DataPair[](_listLength);
@@ -195,10 +163,18 @@ abstract contract SortedList {
             if (nextPos == DUMMY || currentPos == DUMMY) {
                 if (nextPos == DUMMY && currentPos == DUMMY) { // not change
                 } else if (currentPos == DUMMY) {
-                    _head = _list[target].next;
-                    _list[target].next = _list[nextPos].next;
-                    _list[nextPos].next = target;
+                    require(target == _head);
+                    // check not moved
+                    if (nextPos == target) {
+                        _list[target].next = _list[nextPos].next;
+                        _list[nextPos].next = target;
+                    } else {
+                        _head = _list[target].next;
+                        _list[target].next = _list[nextPos].next;
+                        _list[nextPos].next = target;
+                    }
                 } else {
+                    // nextPos == DUMYY
                     // nextPos == DUMMY
                     _list[currentPos].next = _list[target].next;
                     _list[target].next = _head;
@@ -206,7 +182,7 @@ abstract contract SortedList {
                 }
             } else {
                 // 1. not moved
-                if (currentPos == nextPos || _list[currentPos].next == nextPos) {} else {
+                if (currentPos != nextPos && _list[currentPos].next != nextPos) {
                     _list[currentPos].next = _list[target].next;
                     _list[target].next = _list[nextPos].next;
                     _list[nextPos].next = target;
@@ -215,7 +191,28 @@ abstract contract SortedList {
             _list[target].value = newValue;
             // check();
         } else {
-            _addElement(target, newValue);
+            // _addElement(target, newValue);
+            // require(_participated[addr] == false, "duplicated");
+            _participated[target] = true;
+            address ptr = _head;
+            address prev = DUMMY;
+
+            while (ptr != END_OF_LIST) {
+                if (_list[ptr].value < newValue) {
+                    break;
+                }
+                prev = ptr;
+                ptr = _list[ptr].next;
+            }
+
+            if (prev == DUMMY) {
+                _list[target] = Node({next: _head, value: newValue});
+                _head = target;
+            } else {
+                _list[target] = Node({next: _list[prev].next, value: newValue});
+                _list[prev].next = target;
+            }
+            ++_listLength;
         }
         emit UpdateElement(target, prevValue, newValue);
     }
