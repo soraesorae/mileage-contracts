@@ -22,7 +22,7 @@ abstract contract SortedList {
 
     uint256 private _listLength = 0;
 
-    event UpdateElement(address indexed addr, uint256 prev, uint256 value);
+    event UpdateElement(address indexed addr, uint256 indexed prev, uint256 indexed value);
     event RemoveElement(address indexed addr);
 
     constructor() {}
