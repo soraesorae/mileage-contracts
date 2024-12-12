@@ -100,15 +100,23 @@ abstract contract SortedList {
 
     /// @dev return (address, value)[] ranking [from, to]
     function _getElementRange(uint256 from, uint256 to) internal view virtual returns (bytes memory) {
-        require(to >= from, "to < from");
         require(from > 0, "from == 0");
+        require(from <= to, "to < from");
+        if (from > _listLength) {
+            DataPair[] memory empty;
+            return abi.encode(empty);
+        }
         if (to > _listLength) {
             to = _listLength;
+        }
+        if (from > to) {
+            DataPair[] memory empty;
+            return abi.encode(empty);
         }
         address ptr = _head;
         uint256 listIndex = 1;
         uint256 outputIndex = 0;
-        DataPair[] memory output = new DataPair[](to - from + 1);
+        DataPair[] memory output = new DataPair[](to + 1 - from); // to avoid overflow
         while (ptr != END_OF_LIST) {
             if (from <= listIndex) {
                 output[outputIndex] = DataPair({addr: ptr, value: _list[ptr].value});
