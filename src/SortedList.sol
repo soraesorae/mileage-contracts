@@ -114,22 +114,6 @@ abstract contract SortedList {
         return -1;
     }
 
-    // check sort
-
-    // event Log(address indexed target, uint256 indexed value, address indexed next, address h);
-
-    // function check() private {
-    //     address ptr = _head;
-    //     DataPair[] memory arr = new DataPair[](_listLength);
-    //     uint256 i = 0;
-    //     while (ptr != END_OF_LIST) {
-    //         emit Log(ptr, _list[ptr].value, _list[ptr].next, _head);
-    //         arr[i] = DataPair(ptr, _list[ptr].value);
-    //         ptr = _list[ptr].next;
-    //         ++i;
-    //     }
-    // }
-
     function _updateElement(address target, uint256 newValue) internal virtual {
         uint256 prevValue = 0;
         if (_participated[target]) {
@@ -165,10 +149,7 @@ abstract contract SortedList {
                 } else if (currentPos == DUMMY) {
                     require(target == _head);
                     // check not moved
-                    if (nextPos == target) {
-                        _list[target].next = _list[nextPos].next;
-                        _list[nextPos].next = target;
-                    } else {
+                    if (nextPos == target) {} else {
                         _head = _list[target].next;
                         _list[target].next = _list[nextPos].next;
                         _list[nextPos].next = target;
@@ -189,11 +170,7 @@ abstract contract SortedList {
                 }
             }
             _list[target].value = newValue;
-            // check();
         } else {
-            // _addElement(target, newValue);
-            // require(_participated[addr] == false, "duplicated");
-            _participated[target] = true;
             address ptr = _head;
             address prev = DUMMY;
 
@@ -213,6 +190,7 @@ abstract contract SortedList {
                 _list[prev].next = target;
             }
             ++_listLength;
+            _participated[target] = true;
         }
         emit UpdateElement(target, prevValue, newValue);
     }
