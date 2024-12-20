@@ -20,11 +20,6 @@ contract SortedListTest is BubbleSort, Test {
         mockSortedList.addElement(address(0x1234), 0x1000);
     }
 
-    // function testFail_DuplicateNode() public {
-    //     mockSortedList.addElement(address(0xAAAA), 0x1);
-    //     mockSortedList.addElement(address(0xAAAA), 0x1);
-    // }
-
     function test_getAllElement() public {
         for (uint256 i = 0; i < 128; i++) {
             mockSortedList.addElement(address(uint160(127 - i)), i);
@@ -546,6 +541,11 @@ contract SortedListTest is BubbleSort, Test {
         }
     }
 
+    function test_removeElement_Invalid() public {
+        vm.expectRevert("not found in the list");
+        mockSortedList.removeElement(alice);
+    }
+
     function testFuzz_getAllElemnt(
         uint256[] memory values
     ) public {
@@ -563,8 +563,80 @@ contract SortedListTest is BubbleSort, Test {
 
         SortedList.DataPair[] memory result = mockSortedList.getAllElement();
 
-        for (uint256 i = 0; i < addr.length; i++) {
+        for (uint256 i = 0; i < addr.length; ++i) {
             assertEq(result[i].addr, sorted[i]);
+        }
+    }
+
+    function test_updateElementDupValue() public {
+        mockSortedList.updateElement(address(0x000000000000000000000000000000001000000C), 0);
+        {
+            SortedList.DataPair[] memory d1 = mockSortedList.getAllElement();
+            assertEq(d1.length, 1);
+            assertEq(d1[0].addr, 0x000000000000000000000000000000001000000C);
+            assertEq(d1[0].value, 0);
+        }
+        mockSortedList.updateElement(address(0x000000000000000000000000000000001000000C), 0);
+        {
+            SortedList.DataPair[] memory d1 = mockSortedList.getAllElement();
+            assertEq(d1.length, 1);
+            assertEq(d1[0].addr, 0x000000000000000000000000000000001000000C);
+            assertEq(d1[0].value, 0);
+        }
+        mockSortedList.updateElement(address(0x0000000000000000000000000000000010000000), 0);
+        {
+            SortedList.DataPair[] memory d1 = abi.decode(mockSortedList.getElementRange(1, 10), (SortedList.DataPair[]));
+            assertEq(d1.length, 2);
+            assertEq(d1[0].addr, 0x000000000000000000000000000000001000000C);
+            assertEq(d1[0].value, 0);
+            assertEq(d1[1].addr, 0x0000000000000000000000000000000010000000);
+            assertEq(d1[1].value, 0);
+        }
+    }
+
+    function testFuzz_UpdateAndRemove(
+        uint256[] memory _values
+    ) public {
+        vm.assume(0 < _values.length && _values.length <= 50);
+        address[] memory addr = new address[](_values.length);
+        bool[] memory exists = new bool[](_values.length);
+        uint256[] memory values = new uint256[](_values.length);
+
+        for (uint256 i = 0; i < _values.length; ++i) {
+            addr[i] = address(uint160(i + 0x10000000));
+            values[i] = bound(_values[i], 0, 10);
+        }
+
+        uint256 listLength = 0;
+
+        for (uint256 i = 0; i < _values.length; ++i) {
+            if (_values[i] % 2 == 0) {
+                uint256 idx = _values[i] % _values.length;
+                mockSortedList.updateElement(addr[idx], values[idx]);
+                if (exists[idx] == false) {
+                    exists[idx] = true;
+                    ++listLength;
+                }
+            } else {
+                if (listLength > 0) {
+                    uint256 x = _values[i] % listLength + 1;
+                    address target;
+                    uint256 count = 1;
+                    for (uint256 j = 0; j < _values.length; ++j) {
+                        if (exists[j] == true) {
+                            if (count == x) {
+                                exists[j] = false;
+                                target = addr[j];
+                                break;
+                            }
+                            ++count;
+                        }
+                    }
+                    require(target != address(0), "target == 0");
+                    mockSortedList.removeElement(target);
+                    --listLength;
+                }
+            }
         }
     }
 }
