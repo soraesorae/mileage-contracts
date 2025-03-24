@@ -23,6 +23,8 @@ docs/
 # vscode
 .vscode
 
+remappings.txt
+
 bytecode.txt
 bytecode_factory.txt
 
