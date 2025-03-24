@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {SwMileageToken} from "../src/SwMileageToken.sol";
+import {SwMileageTokenImpl} from "../src/SwMileageToken.impl.sol";
 import {SwMileageTokenFactory} from "../src/SwMileageFactory.sol";
 
 interface Ownable {
@@ -11,22 +11,24 @@ interface Ownable {
 
 contract SwMileageFactoryTest is Test {
     // SwMileageToken public mileageToken;
+    SwMileageTokenImpl public impl;
     SwMileageTokenFactory public factory;
     address alice = makeAddr("alice");
 
     function setUp() public {
-        vm.prank(alice);
-        factory = new SwMileageTokenFactory();
+        vm.startPrank(alice);
+        impl = new SwMileageTokenImpl();
+        factory = new SwMileageTokenFactory(address(impl));
         console.log(address(this));
         console.log(address(factory));
+        vm.stopPrank();
     }
 
     function test_deploy() public {
         vm.prank(alice);
-        SwMileageToken deployed = SwMileageToken(factory.deploy("SwMileageToken", "SMT"));
-        console.log(address(deployed));
-        assertEq(deployed.name(), "SwMileageToken");
-        assertEq(deployed.symbol(), "SMT");
+        SwMileageTokenImpl deployed = SwMileageTokenImpl(factory.deploy("SwMileageToken2025", "SMT2025"));
+        assertEq(deployed.name(), "SwMileageToken2025");
+        assertEq(deployed.symbol(), "SMT2025");
         assertEq(deployed.isAdmin(alice), true);
     }
 }

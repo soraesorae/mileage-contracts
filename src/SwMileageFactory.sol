@@ -2,19 +2,30 @@
 pragma solidity ^0.8.13;
 
 import {Ownable} from "kaia-contracts/contracts/access/Ownable.sol";
-import {SwMileageToken} from "./SwMileageToken.sol";
+import {Clones} from "openzeppelin-contracts/contracts/proxy/clones.sol";
+import {IAdmin} from "./IAdmin.sol";
 
-// https://github.com/Uniswap/v2-core/blob/master/contracts/UniswapV2Factory.sol
+interface ISwMileageTokenImpl is IAdmin {
+    function initialize(string memory name_, string memory symbol_, address admin) external;
+}
+
 contract SwMileageTokenFactory {
+    using Clones for address;
+
     event MileageTokenCreated(address indexed tokenAddress);
 
-    constructor() {}
+    address _implementation;
+
+    constructor(
+        address impl
+    ) {
+        _implementation = impl;
+    }
 
     function deploy(string memory name, string memory symbol) external returns (address) {
-        SwMileageToken mileageToken = new SwMileageToken(name, symbol);
-        mileageToken.addAdmin(msg.sender);
-        mileageToken.removeAdmin(address(this));
-        emit MileageTokenCreated(address(mileageToken));
-        return address(mileageToken);
+        address clone = _implementation.clone();
+        ISwMileageTokenImpl(clone).initialize(name, symbol, msg.sender);
+        emit MileageTokenCreated(clone);
+        return address(clone);
     }
 }
