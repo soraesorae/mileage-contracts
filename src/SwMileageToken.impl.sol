@@ -116,7 +116,7 @@ contract SwMileageTokenImpl is Context, IKIP7, KIP7, KIP7Burnable, Initializable
             if (balance != 0) {
                 _updateElement(from, balance);
             } else {
-                _removeElement(from);
+                _removeElement(from, true);
             }
         }
     }

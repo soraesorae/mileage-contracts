@@ -100,7 +100,7 @@ contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Admin, 
             if (balance != 0) {
                 _updateElement(from, balance);
             } else {
-                _removeElement(from);
+                _removeElement(from, true);
             }
         }
     }

@@ -1,17 +1,9 @@
 // SPDX-License-Identifier: Unlicense
 pragma solidity ^0.8.13;
 
-abstract contract SortedList {
-    struct Node {
-        address next;
-        uint256 value;
-    }
+import {ISortedList} from "./ISortedList.sol";
 
-    struct DataPair {
-        address addr;
-        uint256 value;
-    }
-
+abstract contract SortedList is ISortedList {
     mapping(address => Node) private _list;
     mapping(address => bool) private _participated;
 
@@ -21,9 +13,6 @@ abstract contract SortedList {
     address private _head = END_OF_LIST;
 
     uint256 private _listLength = 0;
-
-    event UpdateElement(address indexed addr, uint256 indexed prev, uint256 indexed value);
-    event RemoveElement(address indexed addr);
 
     constructor() {}
 
@@ -35,18 +24,21 @@ abstract contract SortedList {
         return _listLength;
     }
 
-    // function getListNode() internal returns (Node memory) {}
-
+    // util function for testing
+    // Use this function only for testing
     function _push(address addr, uint256 value) internal virtual {
-        require(_participated[addr] == false);
+        require(_participated[addr] == false, "address already exists");
+
         _list[addr] = Node({next: _head, value: value});
         _head = addr;
         _participated[addr] = true;
         ++_listLength;
     }
 
+    // Use this function only for testing
     function _pop() internal virtual {
-        require(_head != END_OF_LIST);
+        require(_head != END_OF_LIST, "empty list");
+
         address next = _list[_head].next;
         _participated[_head] = false;
         delete _list[_head];
@@ -54,151 +46,102 @@ abstract contract SortedList {
         --_listLength;
     }
 
-    function _getAllElement() internal view virtual returns (bytes memory) {
-        address ptr = _head;
-        DataPair[] memory arr = new DataPair[](_listLength);
-        uint256 i = 0;
-        while (ptr != END_OF_LIST) {
-            arr[i] = DataPair(ptr, _list[ptr].value);
-            ptr = _list[ptr].next;
-            ++i;
+    // Use this function only for testing
+    function _getElementIndex(
+        address account
+    ) internal view virtual returns (int256) {
+        if (!_participated[account]) {
+            return -1;
         }
-        return abi.encode(arr);
+
+        address current = _head;
+        int256 index = 1;
+        while (current != END_OF_LIST) {
+            if (current == account) {
+                return index;
+            }
+            current = _list[current].next;
+            index++;
+        }
+
+        return -1;
     }
 
-    /// @dev return (address, value)[] ranking [from, to]
+    // Use this function only for testing
+    function _getAllElement() internal view virtual returns (bytes memory) {
+        DataPair[] memory result = new DataPair[](_listLength);
+
+        address current = _head;
+        for (uint256 i = 0; i < _listLength; i++) {
+            result[i] = DataPair({addr: current, value: _list[current].value});
+            current = _list[current].next;
+        }
+
+        return abi.encode(result);
+    }
+
     function _getElementRange(uint256 from, uint256 to) internal view virtual returns (bytes memory) {
         require(from > 0, "from == 0");
         require(from <= to, "to < from");
+
         if (from > _listLength) {
             DataPair[] memory empty;
             return abi.encode(empty);
         }
-        if (to > _listLength) {
-            to = _listLength;
-        }
-        if (from > to) {
-            DataPair[] memory empty;
-            return abi.encode(empty);
-        }
-        address ptr = _head;
-        uint256 listIndex = 1;
-        uint256 outputIndex = 0;
-        DataPair[] memory output = new DataPair[](to + 1 - from); // to avoid overflow
-        while (ptr != END_OF_LIST) {
-            if (from <= listIndex) {
-                output[outputIndex] = DataPair({addr: ptr, value: _list[ptr].value});
-                ++outputIndex;
-                if (listIndex >= to) {
-                    break;
-                }
-            }
-            ptr = _list[ptr].next;
-            ++listIndex;
-        }
-        require(outputIndex == output.length, "something wrong");
-        return abi.encode(output);
-    }
 
-    function _getElementIndex(
-        address account
-    ) internal virtual returns (int256) {
-        address ptr = _head;
-        int256 i = 1;
-        while (ptr != END_OF_LIST) {
-            if (ptr == account) {
-                return i;
-            }
-            ++i;
+        to = to > _listLength ? _listLength : to;
+        uint256 length = to - from + 1;
+        DataPair[] memory result = new DataPair[](length);
+
+        address current = _head;
+        for (uint256 i = 1; i < from; i++) {
+            current = _list[current].next;
         }
-        return -1;
+
+        for (uint256 i = 0; i < length; i++) {
+            result[i] = DataPair({addr: current, value: _list[current].value});
+            current = _list[current].next;
+        }
+
+        return abi.encode(result);
     }
 
     function _updateElement(address target, uint256 newValue) internal virtual {
         uint256 prevValue = 0;
+
         if (_participated[target]) {
-            // y <- x: between y and x
-            address ptr = _head;
-            address prev = DUMMY;
-            address currentPos = NOT_FOUND; // .. <- [target] <- [currentPos] <- ..
-            address nextPos = NOT_FOUND; // .. <- [here] <- [nextPos] <- ..
-
-            while (ptr != END_OF_LIST) {
-                if (currentPos == NOT_FOUND && ptr == target) {
-                    currentPos = prev;
-                }
-                if (nextPos == NOT_FOUND && _list[ptr].value < newValue) {
-                    nextPos = prev;
-                }
-                if (currentPos != NOT_FOUND && nextPos != NOT_FOUND) {
-                    break;
-                }
-                prev = ptr;
-                ptr = _list[ptr].next;
-            }
-
-            require(currentPos != NOT_FOUND, "current position not found");
             prevValue = _list[target].value;
-
-            if (nextPos == NOT_FOUND) {
-                nextPos = prev;
-            }
-
-            if (nextPos == DUMMY || currentPos == DUMMY) {
-                if (nextPos == DUMMY && currentPos == DUMMY) { // not change
-                } else if (currentPos == DUMMY) {
-                    require(target == _head);
-                    // check not moved
-                    if (nextPos == target) {} else {
-                        _head = _list[target].next;
-                        _list[target].next = _list[nextPos].next;
-                        _list[nextPos].next = target;
-                    }
-                } else {
-                    // nextPos == DUMYY
-                    // nextPos == DUMMY
-                    _list[currentPos].next = _list[target].next;
-                    _list[target].next = _head;
-                    _head = target;
-                }
-            } else {
-                // 1. not moved
-                if (currentPos != nextPos && _list[currentPos].next != nextPos) {
-                    _list[currentPos].next = _list[target].next;
-                    _list[target].next = _list[nextPos].next;
-                    _list[nextPos].next = target;
-                }
-            }
-            _list[target].value = newValue;
-        } else {
-            address ptr = _head;
-            address prev = DUMMY;
-
-            while (ptr != END_OF_LIST) {
-                if (_list[ptr].value < newValue) {
-                    break;
-                }
-                prev = ptr;
-                ptr = _list[ptr].next;
-            }
-
-            if (prev == DUMMY) {
-                _list[target] = Node({next: _head, value: newValue});
-                _head = target;
-            } else {
-                _list[target] = Node({next: _list[prev].next, value: newValue});
-                _list[prev].next = target;
-            }
-            ++_listLength;
-            _participated[target] = true;
+            _removeElement(target, false);
         }
+
+        _insertElement(target, newValue);
+
         emit UpdateElement(target, prevValue, newValue);
     }
 
-    function _removeElement(
-        address target
-    ) internal {
-        require(_participated[target] != false, "not found in the list");
+    function _insertElement(address addr, uint256 value) internal virtual {
+        address ptr = _head;
+        address prev = DUMMY;
+
+        while (ptr != END_OF_LIST && _list[ptr].value >= value) {
+            prev = ptr;
+            ptr = _list[ptr].next;
+        }
+
+        if (prev == DUMMY) {
+            _list[addr] = Node({next: _head, value: value});
+            _head = addr;
+        } else {
+            _list[addr] = Node({next: _list[prev].next, value: value});
+            _list[prev].next = addr;
+        }
+
+        _participated[addr] = true;
+        ++_listLength;
+    }
+
+    function _removeElement(address target, bool _event) internal {
+        require(_participated[target], "not found in the list");
         require(_listLength > 0, "length = 0");
 
         address ptr = _head;
@@ -211,17 +154,18 @@ abstract contract SortedList {
             prev = ptr;
             ptr = _list[ptr].next;
         }
-        require(ptr != END_OF_LIST, "not found");
 
         if (prev == DUMMY) {
             _head = _list[ptr].next;
         } else {
             _list[prev].next = _list[ptr].next;
         }
+
         delete _list[ptr];
         _participated[ptr] = false;
         --_listLength;
-
-        emit RemoveElement(target);
+        if (_event) {
+            emit RemoveElement(target);
+        }
     }
 }
