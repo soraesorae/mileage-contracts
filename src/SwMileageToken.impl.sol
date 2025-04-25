@@ -4,25 +4,48 @@ pragma solidity ^0.8.13;
 import {KIP7} from "kaia-contracts/contracts/KIP/token/KIP7/KIP7.sol";
 import {IKIP7} from "kaia-contracts/contracts/KIP/token/KIP7/IKIP7.sol";
 import {KIP7Burnable} from "kaia-contracts/contracts/KIP/token/KIP7/extensions/KIP7Burnable.sol";
+import {IKIP7Burnable} from "kaia-contracts/contracts/KIP/token/KIP7/extensions/IKIP7Burnable.sol";
 import {Pausable} from "kaia-contracts/contracts/security/Pausable.sol";
 import {Admin} from "./Admin.sol";
+import {Initializable} from "kaia-contracts/contracts/proxy/utils/Initializable.sol";
 import {Context} from "kaia-contracts/contracts/utils/Context.sol";
 
 import {SortedList} from "./SortedList.sol";
+import {ISortedList} from "./ISortedList.sol";
+import {ISwMileageToken} from "./ISwMileageToken.sol";
 
 // TODO: new contract for multiple owner instead of `Ownable`
-contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Admin, SortedList {
-    struct Student {
-        address account;
-        uint256 balance;
-    }
+contract SwMileageTokenImpl is
+    Context,
+    ISwMileageToken,
+    KIP7Burnable,
+    Initializable,
+    Pausable,
+    Admin,
+    ISortedList,
+    SortedList
+{
+    string private _name;
+    string private _symbol;
 
     /// @dev contract constructor
     /// set KIP7 token name, symbol
     ///
-    /// @param name_ token name
-    /// @param symbol_ token symbol
     constructor(string memory name_, string memory symbol_) KIP7(name_, symbol_) {}
+
+    function initialize(string memory name_, string memory symbol_, address admin) external initializer {
+        _name = name_;
+        _symbol = symbol_;
+        _addAdmin(admin);
+    }
+
+    function name() public view override returns (string memory) {
+        return _name;
+    }
+
+    function symbol() public view override returns (string memory) {
+        return _symbol;
+    }
 
     function decimals() public pure override returns (uint8) {
         return 0;
@@ -32,7 +55,7 @@ contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Admin, 
     ///
     function supportsInterface(
         bytes4 interfaceId
-    ) public view virtual override (KIP7, KIP7Burnable) returns (bool) {
+    ) public view virtual override returns (bool) {
         return super.supportsInterface(interfaceId);
     }
 
@@ -57,17 +80,13 @@ contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Admin, 
     ///
     function burn(
         uint256 /* amount */
-    ) public pure override {
-        require(false, "Blocked");
+    ) public pure override (IKIP7Burnable, KIP7Burnable) {
+        require(false, "burn not allowed");
     }
     ////
 
     function _approve(address, /* owner */ address, /* spender */ uint256 /* amount */ ) internal pure override {
-        require(false, "Blocked");
-    }
-
-    function _transfer(address, /* from */ address, /* to */ uint256 /* amount */ ) internal pure override {
-        require(false, "Blocked");
+        require(false, "approval not allowed");
     }
 
     /// @dev KIP7Burnable burnFrom
@@ -76,15 +95,27 @@ contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Admin, 
     /// @param account target account
     /// @param amount amount
     ///
-    function burnFrom(address account, uint256 amount) public override onlyAdmin whenNotPaused {
+    function burnFrom(
+        address account,
+        uint256 amount
+    ) public override (IKIP7Burnable, KIP7Burnable) onlyAdmin whenNotPaused {
         // if (_msgSender() != owner()) {
         //     _spendAllowance(account, _msgSender(), amount);
         // }
         _burn(account, amount);
     }
 
-    function _beforeTokenTransfer(address from, address to, uint256 /*amount*/ ) internal pure override {
-        require(from == address(0) || to == address(0), "only mint or burn");
+    function transferFrom(
+        address from,
+        address to,
+        uint256 amount
+    ) public override (IKIP7, KIP7) onlyAdmin returns (bool) {
+        _transfer(from, to, amount);
+        return true;
+    }
+
+    function _beforeTokenTransfer(address, address, uint256) internal view override {
+        require(isAdmin(msg.sender), "admin only");
     }
 
     function _afterTokenTransfer(address from, address to, uint256 /* amount */ ) internal virtual override {

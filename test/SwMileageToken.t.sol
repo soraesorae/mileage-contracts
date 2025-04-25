@@ -3,20 +3,21 @@ pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
 import {IKIP7} from "kaia-contracts/contracts/KIP/token/KIP7/IKIP7.sol";
-import {SwMileageToken} from "../src/SwMileageToken.sol";
+import {ISwMileageToken} from "../src/ISwMileageToken.sol";
+import {SwMileageTokenImpl} from "../src/SwMileageToken.impl.sol";
 import {SortedList} from "../src/SortedList.sol";
 import {ISortedList} from "../src/ISortedList.sol";
 
 contract SwMileageTokenTest is Test {
-    SwMileageToken public mileageToken;
+    SwMileageTokenImpl public mileageToken;
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
     address charlie = makeAddr("charlie");
 
     function setUp() public {
         vm.prank(alice);
-        mileageToken = new SwMileageToken("SwMileageToken", "SMT");
-        vm.label(address(mileageToken), "mileageToken");
+        mileageToken = new SwMileageTokenImpl("", "");
+        mileageToken.initialize("SwMileageToken", "SMT", alice);
     }
 
     function test_token() public view {
@@ -69,16 +70,12 @@ contract SwMileageTokenTest is Test {
         mileageToken.mint(charlie, 20);
 
         assertEq(mileageToken.balanceOf(charlie), 20);
-        // SwMileageToken.Student[] memory students = mileageToken.getRankingRange(1, 1024);
-        // assertEq(students.length, 1);
-        // assertEq(students[0].addr, bob);
-        // assertEq(students[0].balance, 10);
     }
 
     function test_burn_Admin() public {
         vm.startPrank(alice);
         mileageToken.mint(bob, 10);
-        vm.expectRevert("Blocked");
+        vm.expectRevert("burn not allowed");
         mileageToken.burn(5);
 
         assertEq(mileageToken.balanceOf(bob), 10);
@@ -88,8 +85,8 @@ contract SwMileageTokenTest is Test {
         vm.prank(alice);
         mileageToken.mint(bob, 10);
 
-        vm.expectRevert("Blocked");
         vm.prank(bob);
+        vm.expectRevert("burn not allowed");
         mileageToken.burn(5);
 
         assertEq(mileageToken.balanceOf(bob), 10);
@@ -125,14 +122,14 @@ contract SwMileageTokenTest is Test {
         mileageToken.mint(bob, 20);
         mileageToken.burnFrom(bob, 10);
         {
-            SwMileageToken.Student[] memory result = mileageToken.getRankingRange(1, 2);
+            ISwMileageToken.Student[] memory result = mileageToken.getRankingRange(1, 2);
             assertEq(result.length, 1);
             assertEq(result[0].account, bob);
             assertEq(result[0].balance, 10);
         }
         mileageToken.burnFrom(bob, 10);
         {
-            SwMileageToken.Student[] memory result = mileageToken.getRankingRange(1, 2);
+            ISwMileageToken.Student[] memory result = mileageToken.getRankingRange(1, 2);
             assertEq(result.length, 0);
         }
     }
@@ -149,7 +146,7 @@ contract SwMileageTokenTest is Test {
         mileageToken.mint(user3, 10);
         mileageToken.burnFrom(user2, 10);
         {
-            SwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
+            ISwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
 
             address[3] memory x = [user1, user3, user2];
             uint256[3] memory y = [uint256(30), 10, 10];
@@ -162,7 +159,7 @@ contract SwMileageTokenTest is Test {
 
         mileageToken.burnFrom(user3, 5);
         {
-            SwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
+            ISwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
 
             address[3] memory x = [user1, user2, user3];
             uint256[3] memory y = [uint256(30), 10, 5];
@@ -176,7 +173,7 @@ contract SwMileageTokenTest is Test {
         mileageToken.burnFrom(user2, 10);
 
         {
-            SwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
+            ISwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
 
             address[2] memory x = [user1, user3];
             uint256[2] memory y = [uint256(30), 5];
@@ -190,7 +187,7 @@ contract SwMileageTokenTest is Test {
         mileageToken.mint(user4, 20);
 
         {
-            SwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
+            ISwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
 
             address[3] memory x = [user1, user4, user3];
             uint256[3] memory y = [uint256(30), 20, 5];
@@ -204,7 +201,7 @@ contract SwMileageTokenTest is Test {
         mileageToken.mint(user2, 40);
 
         {
-            SwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
+            ISwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
 
             address[4] memory x = [user2, user1, user4, user3];
             uint256[4] memory y = [uint256(40), 30, 20, 5];
@@ -218,7 +215,7 @@ contract SwMileageTokenTest is Test {
         mileageToken.burnFrom(user2, 10);
 
         {
-            SwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
+            ISwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
 
             address[4] memory x = [user1, user2, user4, user3];
             uint256[4] memory y = [uint256(30), 30, 20, 5];
@@ -232,7 +229,7 @@ contract SwMileageTokenTest is Test {
         mileageToken.burnFrom(user2, 30);
 
         {
-            SwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
+            ISwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
 
             address[3] memory x = [user1, user4, user3];
             uint256[3] memory y = [uint256(30), 20, 5];
@@ -246,7 +243,7 @@ contract SwMileageTokenTest is Test {
         mileageToken.mint(user2, 10);
 
         {
-            SwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
+            ISwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
 
             address[4] memory x = [user1, user4, user2, user3];
             uint256[4] memory y = [uint256(30), 20, 10, 5];
@@ -265,7 +262,7 @@ contract SwMileageTokenTest is Test {
 
         mileageToken.burnFrom(user1, 10);
         {
-            SwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
+            ISwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
             assertEq(s.length, 0);
         }
 
@@ -274,19 +271,11 @@ contract SwMileageTokenTest is Test {
 
         mileageToken.mint(user1, 10);
         {
-            SwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
+            ISwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 100);
             assertEq(s.length, 1);
             assertEq(s[0].account, user1);
             assertEq(s[0].balance, 10);
         }
-
-        // address[4] memory x = [];
-        // uint256[4] memory y = [uint256(30), 20, 10, 5];
-
-        // for (uint256 i = 0; i < 4; i++) {
-        //     assertEq(s[i].account, x[i]);
-        //     assertEq(s[i].balance, y[i]);
-        // }
     }
 
     function testMultipleAdmin() public {}
@@ -297,14 +286,14 @@ contract SwMileageTokenTest is Test {
         mileageToken.mint(bob, 0x10);
         mileageToken.mint(charlie, 0x1000);
 
-        SwMileageToken.Student[] memory students1 = mileageToken.getRankingRange(1, 2);
+        ISwMileageToken.Student[] memory students1 = mileageToken.getRankingRange(1, 2);
 
         assertEq(students1[0].account, charlie);
         assertEq(students1[1].account, bob);
 
         mileageToken.mint(alice, 0x10);
 
-        SwMileageToken.Student[] memory students2 = mileageToken.getRankingRange(1, 10);
+        ISwMileageToken.Student[] memory students2 = mileageToken.getRankingRange(1, 10);
 
         assertEq(students2[0].account, charlie);
         assertEq(students2[1].account, alice);
@@ -312,7 +301,7 @@ contract SwMileageTokenTest is Test {
 
         mileageToken.burnFrom(charlie, 0x1000);
 
-        SwMileageToken.Student[] memory students3 = mileageToken.getRankingRange(1, 10);
+        ISwMileageToken.Student[] memory students3 = mileageToken.getRankingRange(1, 10);
 
         assertEq(students3[0].account, alice);
         assertEq(students3[1].account, bob);
@@ -320,13 +309,13 @@ contract SwMileageTokenTest is Test {
 
     function test_getRankingRangeNoOne() public {
         vm.startPrank(alice);
-        SwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 10);
+        ISwMileageToken.Student[] memory s = mileageToken.getRankingRange(1, 10);
         assertEq(s.length, 0);
     }
 
     function test_getRankingRangeNot() public {
         vm.startPrank(alice);
-        SwMileageToken.Student[] memory s = mileageToken.getRankingRange(10, 10);
+        ISwMileageToken.Student[] memory s = mileageToken.getRankingRange(10, 10);
         assertEq(s.length, 0);
     }
 
@@ -366,5 +355,31 @@ contract SwMileageTokenTest is Test {
         mileageToken.mint(bob, 0x10);
     }
 
-    function test_transfer_NotPermitted() public {}
+    function test_transfer_NotPermitted() public {
+        vm.startPrank(alice);
+        mileageToken.mint(alice, 100);
+        mileageToken.mint(bob, 100);
+        vm.stopPrank();
+
+        vm.prank(bob);
+        vm.expectRevert("admin only");
+        mileageToken.transfer(alice, 50);
+    }
+
+    function test_approve_NotPermitted() public {
+        vm.prank(bob);
+        vm.expectRevert("approval not allowed");
+        mileageToken.approve(bob, 50);
+    }
+
+    function test_getRankingRange_InvalidParams() public {
+        vm.startPrank(alice);
+
+        vm.expectRevert("from == 0");
+        mileageToken.getRankingRange(0, 10);
+
+        vm.expectRevert("to < from");
+        mileageToken.getRankingRange(10, 5);
+        vm.stopPrank();
+    }
 }
