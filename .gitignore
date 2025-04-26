@@ -28,3 +28,5 @@ bytecode_factory.txt
 
 abi.json
 abi_factory.json
+
+/utils/*
