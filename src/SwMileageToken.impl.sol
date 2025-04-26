@@ -132,6 +132,17 @@ contract SwMileageTokenImpl is
             } else {
                 _removeElement(from, true);
             }
+        } else {
+            // transferFrom
+            uint256 fromBalance = balanceOf(from);
+            uint256 toBalance = balanceOf(to);
+            if (fromBalance != 0) {
+                _updateElement(from, fromBalance);
+                _updateElement(to, toBalance);
+            } else {
+                _removeElement(from, false);
+                _updateElement(to, toBalance);
+            }
         }
     }
 

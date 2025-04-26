@@ -255,6 +255,53 @@ contract SwMileageTokenTest is Test {
         }
     }
 
+    function test_transferFrom_Admin() public {
+        vm.startPrank(alice);
+        mileageToken.mint(alice, 100);
+        mileageToken.mint(bob, 100);
+        vm.stopPrank();
+
+        vm.prank(alice);
+        mileageToken.transferFrom(bob, alice, 50);
+        assertEq(mileageToken.balanceOf(alice), 150);
+    }
+
+    function test_transferFrom() public {
+        vm.startPrank(alice);
+        mileageToken.mint(alice, 100);
+        mileageToken.mint(bob, 100);
+        vm.stopPrank();
+
+        ISwMileageToken.Student[] memory s0 = mileageToken.getRankingRange(1, 100);
+
+        assertEq(s0[0].account, alice);
+        assertEq(s0[1].account, bob);
+
+        vm.prank(alice);
+        mileageToken.transferFrom(alice, bob, 50);
+        assertEq(mileageToken.balanceOf(bob), 150);
+
+        ISwMileageToken.Student[] memory s1 = mileageToken.getRankingRange(1, 100);
+
+        assertEq(s1[0].account, bob);
+        assertEq(s1[1].account, alice);
+    }
+
+    function test_transferFrom_toZero() public {
+        vm.startPrank(alice);
+        mileageToken.mint(bob, 100);
+        mileageToken.mint(charlie, 150);
+        mileageToken.transferFrom(charlie, bob, 150);
+        vm.stopPrank();
+        assertEq(mileageToken.balanceOf(bob), 250);
+
+        ISwMileageToken.Student[] memory s0 = mileageToken.getRankingRange(1, 100);
+
+        assertEq(s0.length, 1);
+        assertEq(s0[0].account, bob);
+        assertEq(s0[0].balance, 250);
+    }
+
     function testDoubleRemove() public {
         address user1 = makeAddr("user1");
         vm.startPrank(alice);
@@ -364,6 +411,17 @@ contract SwMileageTokenTest is Test {
         vm.prank(bob);
         vm.expectRevert("admin only");
         mileageToken.transfer(alice, 50);
+    }
+
+    function test_transferFrom_NotPermitted() public {
+        vm.startPrank(alice);
+        mileageToken.mint(alice, 100);
+        mileageToken.mint(bob, 100);
+        vm.stopPrank();
+
+        vm.prank(bob);
+        vm.expectRevert("caller is not the admin");
+        mileageToken.transferFrom(bob, alice, 50);
     }
 
     function test_approve_NotPermitted() public {
