@@ -74,7 +74,7 @@ contract StudentManagerImpl is IStudentManager, Admin {
 
     function approveDocument(uint256 documentIndex, uint256 amount, bytes32 reasonHash) external onlyAdmin {
         DocumentSubmission storage document = docSubmissions[documentIndex];
-        require(document.status == SubmissionStatus.Pending, "document is already complete");
+        require(document.status == SubmissionStatus.Pending, "unavailable document");
         if (amount == 0) {
             document.status = SubmissionStatus.Rejected;
             docResults[documentIndex] = DocumentResult({reasonHash: reasonHash, amount: 0});
@@ -83,8 +83,8 @@ contract StudentManagerImpl is IStudentManager, Admin {
         }
         bytes32 studentId = document.studentId;
         address student = students[studentId];
-        mileageToken.mint(student, amount);
         document.status = SubmissionStatus.Approved;
+        mileageToken.mint(student, amount);
         docResults[documentIndex] = DocumentResult({reasonHash: reasonHash, amount: amount});
 
         emit DocApproved(documentIndex, studentId, amount);
@@ -99,7 +99,7 @@ contract StudentManagerImpl is IStudentManager, Admin {
     function requestAccountChange(
         address targetAccount
     ) external returns (uint256) {
-        require(studentByAddr[targetAccount] == "");
+        require(studentByAddr[targetAccount] == "", "targetAccount already exists");
 
         bytes32 studentId = studentByAddr[msg.sender];
         require(studentId != "", "account doesn't exist");
@@ -116,7 +116,7 @@ contract StudentManagerImpl is IStudentManager, Admin {
 
     function approveAccountChange(uint256 index, bool confirm) external onlyAdmin {
         AccountChangeRequest storage request = accountChangeRequests[index];
-        require(request.status == SubmissionStatus.Pending, "request is already complete");
+        require(request.status == SubmissionStatus.Pending, "unavailable request");
         if (!confirm) {
             request.status = SubmissionStatus.Rejected;
             emit AccountChangeRejected();
@@ -128,7 +128,10 @@ contract StudentManagerImpl is IStudentManager, Admin {
 
         bytes32 studentId = request.studentId;
 
-        mileageToken.transferFrom(account, nextAccount, mileageToken.balanceOf(account));
+        if (mileageToken._participated(account)) {
+            mileageToken.transferFrom(account, nextAccount, mileageToken.balanceOf(account));
+        }
+
         students[studentId] = nextAccount;
         studentByAddr[nextAccount] = request.studentId;
         request.status = SubmissionStatus.Approved;

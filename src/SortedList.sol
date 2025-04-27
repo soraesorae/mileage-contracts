@@ -5,7 +5,7 @@ import {ISortedList} from "./ISortedList.sol";
 
 abstract contract SortedList is ISortedList {
     mapping(address => Node) private _list;
-    mapping(address => bool) private _participated;
+    mapping(address => bool) public _participated;
 
     address private constant END_OF_LIST = address(0xdeadbeef);
     address private constant DUMMY = address(0x0badbeef);
