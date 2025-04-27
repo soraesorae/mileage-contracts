@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {SwMileageTokenImpl} from "../src/SwMileageTokenImpl.sol";
+import {SwMileageTokenImpl} from "../src/SwMileageToken.impl.sol";
 import {SwMileageTokenFactory} from "../src/SwMileageFactory.sol";
 
 interface Ownable {
@@ -17,7 +17,7 @@ contract SwMileageFactoryTest is Test {
 
     function setUp() public {
         vm.startPrank(alice);
-        impl = new SwMileageTokenImpl();
+        impl = new SwMileageTokenImpl("", "");
         factory = new SwMileageTokenFactory(address(impl));
         console.log(address(this));
         console.log(address(factory));
