@@ -6,6 +6,7 @@ import {IKIP7} from "kaia-contracts/contracts/KIP/token/KIP7/IKIP7.sol";
 import {SwMileageTokenImpl} from "../src/SwMileageToken.impl.sol";
 import {StudentManagerImpl} from "../src/StudentManager.impl.sol";
 import {IStudentManager} from "../src/IStudentManager.sol";
+import {ISwMileageToken} from "../src/ISwMileageToken.sol";
 
 contract MockStudentManager is StudentManagerImpl {
     constructor(
@@ -46,7 +47,7 @@ contract StudentManagerTest is Test {
     }
 
     function test_registerStudent() public {
-        bytes32 studentId = keccak256(abi.encodePacked("STUDENT1", "123456789")); // safe?
+        bytes32 studentId = keccak256(abi.encode("STUDENT1", "123456789")); // safe?
         vm.prank(alice);
         manager.registerStudent(studentId);
         console.logBytes32(studentId);
@@ -55,8 +56,8 @@ contract StudentManagerTest is Test {
     }
 
     function test_registerStudent_existsAccount() public {
-        bytes32 studentId = keccak256(abi.encodePacked("STUDENT1", "123456789")); // safe?
-        bytes32 studentId2 = keccak256(abi.encodePacked("STUDENT2", "123456789")); // safe?
+        bytes32 studentId = keccak256(abi.encode("STUDENT1", "123456789")); // safe?
+        bytes32 studentId2 = keccak256(abi.encode("STUDENT2", "123456789")); // safe?
         vm.prank(alice);
         manager.registerStudent(studentId);
 
@@ -69,7 +70,7 @@ contract StudentManagerTest is Test {
     }
 
     function test_registerStudent_existsId() public {
-        bytes32 studentId = keccak256(abi.encodePacked("STUDENT1", "123456789")); // safe?
+        bytes32 studentId = keccak256(abi.encode("STUDENT1", "123456789")); // safe?
         vm.prank(alice);
         manager.registerStudent(studentId);
 
@@ -89,7 +90,7 @@ contract StudentManagerTest is Test {
     }
 
     function test_submitDocument_vaildationCheck() public {
-        bytes32 studentId = keccak256(abi.encodePacked("STUDENT1", "123456789")); // safe?
+        bytes32 studentId = keccak256(abi.encode("STUDENT1", "123456789")); // safe?
         bytes32 docHash = keccak256("THIS IS TEST DOCUMENT");
         _registerStudent(studentId, bob);
 
@@ -104,8 +105,8 @@ contract StudentManagerTest is Test {
     function test_submitDocument_submit() public {
         bytes32 docHash = keccak256("THIS IS TEST DOCUMENT");
         bytes32 docHash2 = keccak256("THIS IS SECOND TEST DOCUMENT");
-        bytes32 studentId = keccak256(abi.encodePacked("123456789", "123456789")); // safe?
-        bytes32 studentId2 = keccak256(abi.encodePacked("987654321", "123456789")); // safe?
+        bytes32 studentId = keccak256(abi.encode("123456789", "123456789")); // safe?
+        bytes32 studentId2 = keccak256(abi.encode("987654321", "123456789")); // safe?
         _registerStudent(studentId, bob);
         _registerStudent(studentId2, charlie);
 
@@ -135,11 +136,14 @@ contract StudentManagerTest is Test {
     function test_approveDocument_approve() public {
         bytes32 docHash = keccak256("THIS IS TEST DOCUMENT");
         bytes32 reasonHash = keccak256("THIS IS TEST REASON");
-        bytes32 studentId = keccak256(abi.encodePacked("123456789", "123456789")); // safe?
+        bytes32 studentId = keccak256(abi.encode("123456789", "123456789")); // safe?
 
         _registerStudent(studentId, alice);
 
         vm.startPrank(alice);
+
+        vm.expectRevert("unavailable document");
+        manager.approveDocument(0, 100, reasonHash);
 
         uint256 index = manager.submitDocument(docHash);
         IStudentManager.DocumentSubmission memory docs = manager.getDocSubmission(index);
@@ -159,7 +163,7 @@ contract StudentManagerTest is Test {
         assertEq(result.reasonHash, reasonHash);
         assertEq(token.balanceOf(alice), 100);
 
-        vm.expectRevert();
+        vm.expectRevert("unavailable document");
         manager.approveDocument(index, 200, reasonHash);
 
         vm.stopPrank();
@@ -168,7 +172,7 @@ contract StudentManagerTest is Test {
     function test_approveDocument_reject() public {
         bytes32 docHash = keccak256("THIS IS TEST DOCUMENT");
         bytes32 reasonHash = keccak256("THIS IS TEST REASON");
-        bytes32 studentId = keccak256(abi.encodePacked("123456789", "123456789")); // safe?
+        bytes32 studentId = keccak256(abi.encode("123456789", "123456789")); // safe?
 
         _registerStudent(studentId, alice);
 
@@ -193,7 +197,7 @@ contract StudentManagerTest is Test {
     }
 
     function test_requestAccountChange() public {
-        bytes32 studentId = keccak256(abi.encodePacked("123456789", "123456789")); // safe?
+        bytes32 studentId = keccak256(abi.encode("123456789", "123456789")); // safe?
         _registerStudent(studentId, bob);
 
         vm.expectEmit(address(manager));
@@ -212,5 +216,169 @@ contract StudentManagerTest is Test {
     }
 
     function test_changeAccount() public {}
-    function test_approveChangeAccount() public {}
+
+    function test_approveAccountChange() public {
+        bytes32 studentIdA = keccak256(abi.encode("studentA", "123456789")); // safe?
+        bytes32 studentIdB = keccak256(abi.encode("studentB", "123456789")); // safe?
+        bytes32 docHash = keccak256("THIS IS TEST DOCUMENT");
+        bytes32 reasonHash = keccak256("THIS IS TEST REASON");
+
+        vm.prank(alice);
+        vm.expectRevert("unavailable request");
+        manager.approveAccountChange(0, true);
+
+        _registerStudent(studentIdA, alice);
+        _registerStudent(studentIdB, bob);
+
+        vm.prank(alice);
+        vm.expectRevert("targetAccount already exists");
+        manager.requestAccountChange(bob);
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.AccountChangeRequested(0, studentIdA, alice, charlie);
+        vm.prank(alice);
+        uint256 index = manager.requestAccountChange(charlie);
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.AccountChangeApproved(index, studentIdA, alice, charlie);
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.AccountChanged(studentIdA, alice, charlie);
+
+        vm.prank(alice);
+        manager.approveAccountChange(index, true);
+
+        assertEq(manager.students(studentIdA), charlie);
+
+        // bytes32 studentIdC = keccak256(abi.encode("studentC", "123456789")); // safe?
+        // bytes32 studentIdD = keccak256(abi.encode("studentD", "123456789")); // safe?
+        address dummy1 = makeAddr("ABCD");
+        // address dummy2 = makeAddr("ABCDE");
+
+        vm.prank(bob);
+        manager.submitDocument(docHash);
+
+        vm.prank(alice);
+        manager.approveDocument(0, 200, reasonHash);
+
+        assertEq(token.balanceOf(bob), 200);
+        assertEq(token.balanceOf(dummy1), 0);
+
+        vm.prank(bob);
+        manager.requestAccountChange(dummy1);
+
+        vm.prank(alice);
+        manager.approveAccountChange(1, true);
+
+        assertEq(token.balanceOf(bob), 0);
+        assertEq(token.balanceOf(dummy1), 200);
+
+        ISwMileageToken.Student[] memory s = token.getRankingRange(1, 100);
+        assertEq(s.length, 1);
+        assertEq(s[0].account, dummy1);
+
+        assertEq(manager.students(studentIdB), dummy1);
+
+        // reject scenario
+        address dummy2 = makeAddr("dummy2");
+        vm.prank(dummy1);
+        uint256 index2 = manager.requestAccountChange(dummy2);
+
+        vm.prank(alice);
+        manager.approveAccountChange(index2, false);
+        assertEq(manager.students(studentIdB), dummy1);
+
+        // zero mileage token balance
+        bytes32 studentIdC = keccak256(abi.encode("studentC", "123456789")); // safe?
+        address dummy3 = makeAddr("dummy3");
+        address dummy4 = makeAddr("dummy4");
+        _registerStudent(studentIdC, dummy3);
+
+        vm.prank(dummy3);
+        uint256 index3 = manager.requestAccountChange(dummy4);
+
+        vm.prank(alice);
+        manager.approveAccountChange(index3, true);
+
+        vm.prank(dummy4);
+        uint256 index4 = manager.submitDocument(docHash);
+
+        vm.prank(alice);
+        manager.approveDocument(index4, 321, reasonHash);
+
+        assertEq(token.balanceOf(dummy4), 321);
+
+        ISwMileageToken.Student[] memory s1 = token.getRankingRange(1, 100);
+        assertEq(s1.length, 2);
+        assertEq(s1[0].account, dummy4);
+        assertEq(s1[0].balance, 321);
+        assertEq(s1[1].account, dummy1);
+        assertEq(s1[1].balance, 200);
+
+        // change
+        address dummy5 = makeAddr("dummy5");
+        vm.prank(dummy4);
+        uint256 index5 = manager.requestAccountChange(dummy5);
+
+        vm.prank(alice);
+        manager.approveAccountChange(index5, true);
+
+        ISwMileageToken.Student[] memory s2 = token.getRankingRange(1, 100);
+        assertEq(s2.length, 2);
+        assertEq(s2[0].account, dummy5);
+        assertEq(s2[0].balance, 321);
+        assertEq(s2[1].account, dummy1);
+        assertEq(s2[1].balance, 200);
+    }
+
+    function test_approveAccountChange_3steps() public {
+        bytes32 studentIdA = keccak256(abi.encode("studentA", "123456789")); // safe?
+        // bytes32 studentIdB = keccak256(abi.encode("studentB", "123456789")); // safe?
+        bytes32 docHash = keccak256("THIS IS TEST DOCUMENT");
+        bytes32 reasonHash = keccak256("THIS IS TEST REASON");
+
+        address dummy1 = makeAddr("dummy1");
+        address dummy2 = makeAddr("dummy2");
+        // address dummy3 = makeAddr("dummy3");
+
+        _registerStudent(studentIdA, bob);
+
+        assertEq(manager.students(studentIdA), bob); // <-- [1]
+
+        vm.prank(bob);
+        manager.submitDocument(docHash);
+
+        vm.prank(alice);
+        manager.approveDocument(0, 123, reasonHash);
+
+        vm.prank(bob);
+        manager.requestAccountChange(dummy1);
+
+        vm.prank(alice);
+        manager.approveAccountChange(0, true);
+
+        assertEq(manager.students(studentIdA), dummy1); // <-- [2]
+        ISwMileageToken.Student[] memory s1 = token.getRankingRange(1, 100);
+        assertEq(s1[0].account, dummy1);
+        assertEq(s1[0].balance, 123);
+
+        vm.expectRevert("address validation check failed");
+        vm.prank(bob);
+        manager.requestAccountChange(dummy2);
+
+        vm.prank(dummy1);
+        manager.requestAccountChange(dummy2);
+
+        vm.prank(alice);
+        manager.approveAccountChange(1, true);
+
+        assertEq(manager.students(studentIdA), dummy2); // <-- [3]
+        ISwMileageToken.Student[] memory s2 = token.getRankingRange(1, 100);
+        assertEq(s2[0].account, dummy2);
+        assertEq(s2[0].balance, 123);
+
+        vm.expectRevert("targetAccount already exists");
+        vm.prank(dummy2);
+        manager.requestAccountChange(bob);
+    }
 }
