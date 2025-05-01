@@ -9,7 +9,6 @@ import {Admin} from "./Admin.sol";
 import {Context} from "kaia-contracts/contracts/utils/Context.sol";
 
 import {SortedList} from "./SortedList.sol";
-import {ISwMileageToken} from "./ISwMileageToken.sol";
 
 // TODO: new contract for multiple owner instead of `Ownable`
 contract SwMileageToken is Context, IKIP7, KIP7, KIP7Burnable, Pausable, Admin, SortedList {

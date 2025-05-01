@@ -2,7 +2,7 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {SwMileageTokenImpl} from "../src/SwMileageToken.impl.sol";
+import {SwMileageTokenImpl} from "../src/SwMileageTokenImpl.sol";
 import {SwMileageTokenFactory} from "../src/SwMileageFactory.sol";
 
 interface Ownable {
