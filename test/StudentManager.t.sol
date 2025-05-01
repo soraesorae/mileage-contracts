@@ -381,4 +381,41 @@ contract StudentManagerTest is Test {
         vm.prank(dummy2);
         manager.requestAccountChange(bob);
     }
+
+    function test_burnFrom() public {
+        bytes32 studentIdA = keccak256(abi.encode("studentA", "123456789")); // safe?
+        // bytes32 studentIdB = keccak256(abi.encode("studentB", "123456789")); // safe?
+        bytes32 docHash = keccak256("THIS IS TEST DOCUMENT");
+        bytes32 reasonHash = keccak256("THIS IS TEST REASON");
+
+        _registerStudent(studentIdA, bob);
+
+        assertEq(manager.students(studentIdA), bob); // <-- [1]
+
+        vm.prank(bob);
+        manager.submitDocument(docHash);
+
+        vm.prank(alice);
+        manager.approveDocument(0, 123, reasonHash);
+
+        ISwMileageToken.Student[] memory s1 = token.getRankingRange(1, 100);
+        assertEq(s1[0].account, bob);
+        assertEq(s1[0].balance, 123);
+
+        vm.prank(alice);
+        manager.burnFrom(studentIdA, address(0), 1);
+
+        ISwMileageToken.Student[] memory s2 = token.getRankingRange(1, 100);
+        assertEq(s2[0].account, bob);
+        assertEq(s2[0].balance, 122);
+
+        vm.prank(alice);
+        manager.burnFrom(studentIdA, address(bob), 1);
+        assertEq(s2[0].account, bob);
+        assertEq(s2[0].balance, 122);
+
+        vm.expectRevert("KIP7: burn amount exceeds balance");
+        vm.prank(alice);
+        manager.burnFrom(studentIdA, address(0x1), 1);
+    }
 }

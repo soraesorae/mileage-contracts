@@ -134,6 +134,12 @@ contract SwMileageTokenTest is Test {
         }
     }
 
+    function test_burnFrom_0() public {
+        vm.expectRevert("not found in the list");
+        vm.startPrank(alice);
+        mileageToken.burnFrom(bob, 0);
+    }
+
     function testRemoveAfterBurn() public {
         address user1 = makeAddr("user1");
         address user2 = makeAddr("user2");

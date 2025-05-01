@@ -90,9 +90,16 @@ contract StudentManagerImpl is IStudentManager, Admin {
         emit DocApproved(documentIndex, studentId, amount);
     }
 
-    function burnFrom(address account, uint256 amount) external onlyAdmin {
-        mileageToken.burnFrom(account, amount);
-        // emit
+    function burnFrom(bytes32 studentId, address account, uint256 amount) external onlyAdmin {
+        // is valid account, studentId?
+        if (account == address(0)) {
+            account = students[studentId];
+            mileageToken.burnFrom(account, amount);
+        } else {
+            studentId = studentByAddr[account];
+            mileageToken.burnFrom(account, amount);
+        }
+        emit MileageBurned(studentId, amount);
     }
 
     // TODO: signature check

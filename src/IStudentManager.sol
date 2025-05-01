@@ -34,4 +34,6 @@ interface IStudentManager {
     event AccountChangeRejected();
 
     event AccountChanged(bytes32 indexed studentId, address previous, address current);
+
+    event MileageBurned(bytes32 indexed studentId, uint256 amount);
 }
