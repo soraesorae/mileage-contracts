@@ -13,7 +13,7 @@ contract StudentManagerImpl is IStudentManager, Admin {
     mapping(uint256 => DocumentResult) public docResults;
     uint256 private documentsCount;
 
-    mapping(uint256 => AccountChangeRequest) public accountChangeRequests;
+    mapping(bytes32 => address) public pendingAccountChanges;
     uint256 private requestsCount;
 
     SwMileageTokenImpl public mileageToken;
@@ -42,10 +42,16 @@ contract StudentManagerImpl is IStudentManager, Admin {
         return docResults[index];
     }
 
-    function getAccountChangeRequest(
-        uint256 index
-    ) public view returns (AccountChangeRequest memory) {
-        return accountChangeRequests[index];
+    function getPendingAccountChange(
+        bytes32 studentId
+    ) public view returns (address) {
+        return pendingAccountChanges[studentId];
+    }
+
+    function hasPendingAccountChange(
+        bytes32 studentId
+    ) public view returns (bool) {
+        return pendingAccountChanges[studentId] != address(0);
     }
 
     // check account is EOA
@@ -102,54 +108,65 @@ contract StudentManagerImpl is IStudentManager, Admin {
         emit MileageBurned(studentId, amount);
     }
 
-    // TODO: signature check
-    function requestAccountChange(
+    function proposeAccountChange(
         address targetAccount
-    ) external returns (uint256) {
-        require(studentByAddr[targetAccount] == "", "targetAccount already exists");
-
+    ) public {
         bytes32 studentId = studentByAddr[msg.sender];
+        require(targetAccount != address(0), "invalid targetAccount");
         require(studentId != "", "account doesn't exist");
         require(students[studentId] == msg.sender, "address validation check failed");
+        require(studentByAddr[targetAccount] == "", "targetAccount already exists");
 
-        uint256 requestIndex = requestsCount;
-        accountChangeRequests[requestIndex] =
-            AccountChangeRequest({status: SubmissionStatus.Pending, studentId: studentId, targetAccount: targetAccount});
-        ++requestsCount;
+        pendingAccountChanges[studentId] = targetAccount;
 
-        emit AccountChangeRequested(requestIndex, studentId, msg.sender, targetAccount);
-        return requestIndex;
+        emit AccountChangeProposed(studentId, targetAccount);
     }
 
-    function approveAccountChange(uint256 index, bool confirm) external onlyAdmin {
-        AccountChangeRequest storage request = accountChangeRequests[index];
-        require(request.status == SubmissionStatus.Pending, "unavailable request");
-        if (!confirm) {
-            request.status = SubmissionStatus.Rejected;
-            emit AccountChangeRejected();
-            return;
+    function confirmAccountChange(
+        bytes32 studentId
+    ) public {
+        address currentAccount = students[studentId];
+        address targetAccount = pendingAccountChanges[studentId];
+        uint256 balance = 0;
+        bool isParticipated = false;
+
+        require(targetAccount != address(0), "invalid targetAccount");
+        require(targetAccount == msg.sender, "unauthorized confirmation");
+        require(studentByAddr[targetAccount] == "", "targetAccount already exists");
+
+        if (mileageToken.participated(currentAccount)) {
+            isParticipated = true;
+            balance = mileageToken.balanceOf(currentAccount);
         }
-        address account = students[request.studentId];
-        address nextAccount = request.targetAccount;
-        require(studentByAddr[nextAccount] == "");
 
-        bytes32 studentId = request.studentId;
+        students[studentId] = targetAccount;
+        studentByAddr[targetAccount] = studentId;
 
-        if (mileageToken._participated(account)) {
-            mileageToken.transferFrom(account, nextAccount, mileageToken.balanceOf(account));
+        delete pendingAccountChanges[studentId];
+
+        if (isParticipated) {
+            mileageToken.transferFrom(currentAccount, targetAccount, balance);
         }
 
-        students[studentId] = nextAccount;
-        studentByAddr[nextAccount] = request.studentId;
-        request.status = SubmissionStatus.Approved;
-        emit AccountChangeApproved(index, studentId, account, nextAccount);
-        emit AccountChanged(studentId, account, nextAccount);
+        emit AccountChangeConfirmed(studentId, targetAccount);
+        emit AccountChanged(studentId, currentAccount, targetAccount);
     }
 
-    function changeAccount(bytes32 studentId, address target) external onlyAdmin {
-        address account = students[studentId];
-        students[studentId] = target;
-        studentByAddr[target] = studentId;
-        emit AccountChanged(studentId, account, target);
+    function changeAccount(bytes32 studentId, address targetAccount) external onlyAdmin {
+        address currentAccount = students[studentId];
+        uint256 balance = 0;
+        bool isParticipated = false;
+
+        if (mileageToken.participated(currentAccount)) {
+            isParticipated = true;
+            balance = mileageToken.balanceOf(currentAccount);
+        }
+
+        students[studentId] = targetAccount;
+        studentByAddr[targetAccount] = studentId;
+        if (isParticipated) {
+            mileageToken.transferFrom(currentAccount, targetAccount, balance);
+        }
+        emit AccountChanged(studentId, currentAccount, targetAccount);
     }
 }

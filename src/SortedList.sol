@@ -5,7 +5,7 @@ import {ISortedList} from "./ISortedList.sol";
 
 abstract contract SortedList is ISortedList {
     mapping(address => Node) private _list;
-    mapping(address => bool) public _participated;
+    mapping(address => bool) private _participated;
 
     address private constant END_OF_LIST = address(0xdeadbeef);
     address private constant DUMMY = address(0x0badbeef);
@@ -22,6 +22,12 @@ abstract contract SortedList is ISortedList {
 
     function _getListLength() internal view virtual returns (uint256) {
         return _listLength;
+    }
+
+    function participated(
+        address addr
+    ) public view virtual returns (bool) {
+        return _participated[addr];
     }
 
     // util function for testing

@@ -8,12 +8,6 @@ interface IStudentManager {
         bytes32 docHash;
     }
 
-    struct AccountChangeRequest {
-        SubmissionStatus status;
-        bytes32 studentId;
-        address targetAccount;
-    }
-
     struct DocumentResult {
         bytes32 reasonHash;
         uint256 amount;
@@ -29,9 +23,9 @@ interface IStudentManager {
     event DocSubmitted(uint256 indexed index, bytes32 indexed studentId, bytes32 docHash);
     event DocApproved(uint256 indexed index, bytes32 indexed studentId, uint256 amount);
     event DocRejected();
-    event AccountChangeRequested(uint256 indexed index, bytes32 indexed studentId, address current, address target);
-    event AccountChangeApproved(uint256 indexed index, bytes32 indexed studentId, address previous, address current);
-    event AccountChangeRejected();
+
+    event AccountChangeProposed(bytes32 indexed studentId, address targetAccount);
+    event AccountChangeConfirmed(bytes32 indexed studentId, address targetAccount);
 
     event AccountChanged(bytes32 indexed studentId, address previous, address current);
 
