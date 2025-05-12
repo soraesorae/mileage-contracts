@@ -5,8 +5,9 @@ import {ISwMileageToken} from "./ISwMileageToken.sol";
 import {SwMileageTokenImpl} from "./SwMileageToken.impl.sol";
 import {IStudentManager} from "./IStudentManager.sol";
 import {Admin} from "./Admin.sol";
+import {Initializable} from "kaia-contracts/contracts/proxy/utils/Initializable.sol";
 
-contract StudentManagerImpl is IStudentManager, Admin {
+contract StudentManagerImpl is IStudentManager, Initializable, Admin {
     mapping(bytes32 => address) public students;
     mapping(address => bytes32) public studentByAddr;
     mapping(uint256 => DocumentSubmission) public docSubmissions;
@@ -16,18 +17,27 @@ contract StudentManagerImpl is IStudentManager, Admin {
     mapping(bytes32 => AccountChangeProposal) public pendingAccountChanges;
     uint256 private requestsCount;
 
-    SwMileageTokenImpl public mileageToken;
+    SwMileageTokenImpl public _mileageToken;
 
     constructor(
-        SwMileageTokenImpl _mileageToken
+        address mileageToken_
     ) {
-        mileageToken = _mileageToken;
+        _mileageToken = SwMileageTokenImpl(mileageToken_);
+    }
+
+    function mileageToken() public view returns (address) {
+        return address(_mileageToken);
+    }
+
+    function initialize(address mileageToken_, address admin) external initializer {
+        _mileageToken = SwMileageTokenImpl(mileageToken_);
+        _addAdmin(admin);
     }
 
     function changeMileageToken(
         address addr
     ) external onlyAdmin {
-        mileageToken = SwMileageTokenImpl(addr);
+        _mileageToken = SwMileageTokenImpl(addr);
     }
 
     function getDocSubmission(
@@ -102,7 +112,7 @@ contract StudentManagerImpl is IStudentManager, Admin {
         address student = students[studentId];
 
         document.status = SubmissionStatus.Approved;
-        mileageToken.mint(student, amount);
+        _mileageToken.mint(student, amount);
         docResults[documentIndex] =
             DocumentResult({reasonHash: reasonHash, amount: amount, processedAt: block.timestamp});
 
@@ -122,10 +132,10 @@ contract StudentManagerImpl is IStudentManager, Admin {
         // is valid account, studentId?
         if (account == address(0)) {
             account = students[studentId];
-            mileageToken.burnFrom(account, amount);
+            _mileageToken.burnFrom(account, amount);
         } else {
             studentId = studentByAddr[account];
-            mileageToken.burnFrom(account, amount);
+            _mileageToken.burnFrom(account, amount);
         }
         emit MileageBurned(studentId, account, msg.sender, amount);
     }
@@ -155,9 +165,9 @@ contract StudentManagerImpl is IStudentManager, Admin {
         require(targetAccount == msg.sender, "unauthorized confirmation");
         require(studentByAddr[targetAccount] == "", "targetAccount already exists");
 
-        if (mileageToken.participated(currentAccount)) {
+        if (_mileageToken.participated(currentAccount)) {
             isParticipated = true;
-            balance = mileageToken.balanceOf(currentAccount);
+            balance = _mileageToken.balanceOf(currentAccount);
         }
 
         students[studentId] = targetAccount;
@@ -166,7 +176,7 @@ contract StudentManagerImpl is IStudentManager, Admin {
         delete pendingAccountChanges[studentId];
 
         if (isParticipated) {
-            mileageToken.transferFrom(currentAccount, targetAccount, balance);
+            _mileageToken.transferFrom(currentAccount, targetAccount, balance);
         }
 
         emit AccountChangeConfirmed(studentId, currentAccount, targetAccount);
@@ -178,15 +188,15 @@ contract StudentManagerImpl is IStudentManager, Admin {
         uint256 balance = 0;
         bool isParticipated = false;
 
-        if (mileageToken.participated(currentAccount)) {
+        if (_mileageToken.participated(currentAccount)) {
             isParticipated = true;
-            balance = mileageToken.balanceOf(currentAccount);
+            balance = _mileageToken.balanceOf(currentAccount);
         }
 
         students[studentId] = targetAccount;
         studentByAddr[targetAccount] = studentId;
         if (isParticipated) {
-            mileageToken.transferFrom(currentAccount, targetAccount, balance);
+            _mileageToken.transferFrom(currentAccount, targetAccount, balance);
         }
         emit AccountChanged(studentId, currentAccount, targetAccount);
     }

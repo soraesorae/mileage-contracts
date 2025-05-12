@@ -10,7 +10,7 @@ import {ISwMileageToken} from "../src/ISwMileageToken.sol";
 
 contract MockStudentManager is StudentManagerImpl {
     constructor(
-        SwMileageTokenImpl token
+        address token
     ) StudentManagerImpl(token) {}
 
     function changeDocStatus(uint256 index, IStudentManager.SubmissionStatus status) external {
@@ -28,7 +28,7 @@ contract StudentManagerTest is Test {
     function setUp() public {
         vm.startPrank(alice);
         token = new SwMileageTokenImpl("", "");
-        manager = new MockStudentManager(token);
+        manager = new MockStudentManager(address(token));
 
         token.addAdmin(address(manager));
 

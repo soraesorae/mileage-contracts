@@ -14,12 +14,16 @@ contract SwMileageTokenFactory {
 
     event MileageTokenCreated(address indexed tokenAddress);
 
-    address _implementation;
+    address private _implementation;
 
     constructor(
         address impl
     ) {
         _implementation = impl;
+    }
+
+    function implementaion() external view returns (address) {
+        return _implementation;
     }
 
     function deploy(string memory name, string memory symbol) external returns (address) {
