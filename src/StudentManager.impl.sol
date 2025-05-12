@@ -13,7 +13,7 @@ contract StudentManagerImpl is IStudentManager, Admin {
     mapping(uint256 => DocumentResult) public docResults;
     uint256 private documentsCount;
 
-    mapping(bytes32 => address) public pendingAccountChanges;
+    mapping(bytes32 => AccountChangeProposal) public pendingAccountChanges;
     uint256 private requestsCount;
 
     SwMileageTokenImpl public mileageToken;
@@ -25,9 +25,9 @@ contract StudentManagerImpl is IStudentManager, Admin {
     }
 
     function changeMileageToken(
-        SwMileageTokenImpl addr
+        address addr
     ) external onlyAdmin {
-        mileageToken = addr;
+        mileageToken = SwMileageTokenImpl(addr);
     }
 
     function getDocSubmission(
@@ -45,13 +45,13 @@ contract StudentManagerImpl is IStudentManager, Admin {
     function getPendingAccountChange(
         bytes32 studentId
     ) public view returns (address) {
-        return pendingAccountChanges[studentId];
+        return pendingAccountChanges[studentId].targetAccount;
     }
 
     function hasPendingAccountChange(
         bytes32 studentId
     ) public view returns (bool) {
-        return pendingAccountChanges[studentId] != address(0);
+        return pendingAccountChanges[studentId].targetAccount != address(0);
     }
 
     // check account is EOA
@@ -64,36 +64,58 @@ contract StudentManagerImpl is IStudentManager, Admin {
         studentByAddr[msg.sender] = studentId;
     }
 
-    function submitDocument(
-        bytes32 docHash
-    ) external returns (uint256) {
+    function _validateAccount() internal view returns (bytes32) {
         bytes32 studentId = studentByAddr[msg.sender];
         require(studentId != "", "account doesn't exist");
         require(students[studentId] == msg.sender, "address validation check failed");
-        uint256 documentIndex = documentsCount;
-        docSubmissions[documentIndex] =
-            DocumentSubmission({studentId: studentId, docHash: docHash, status: SubmissionStatus.Pending});
-        ++documentsCount;
+        return studentId;
+    }
+
+    function submitDocument(
+        bytes32 docHash
+    ) external returns (uint256) {
+        bytes32 studentId = _validateAccount();
+
+        uint256 documentIndex = documentsCount++;
+        docSubmissions[documentIndex] = DocumentSubmission({
+            studentId: studentId,
+            docHash: docHash,
+            createdAt: block.timestamp,
+            status: SubmissionStatus.Pending
+        });
+
         emit DocSubmitted(documentIndex, studentId, docHash);
         return documentIndex;
     }
 
     function approveDocument(uint256 documentIndex, uint256 amount, bytes32 reasonHash) external onlyAdmin {
+        require(documentIndex < documentsCount, "invalid documentIndex");
         DocumentSubmission storage document = docSubmissions[documentIndex];
         require(document.status == SubmissionStatus.Pending, "unavailable document");
+
         if (amount == 0) {
-            document.status = SubmissionStatus.Rejected;
-            docResults[documentIndex] = DocumentResult({reasonHash: reasonHash, amount: 0});
-            emit DocRejected();
+            _rejectDocument(documentIndex, reasonHash);
             return;
         }
+
         bytes32 studentId = document.studentId;
         address student = students[studentId];
+
         document.status = SubmissionStatus.Approved;
         mileageToken.mint(student, amount);
-        docResults[documentIndex] = DocumentResult({reasonHash: reasonHash, amount: amount});
+        docResults[documentIndex] =
+            DocumentResult({reasonHash: reasonHash, amount: amount, processedAt: block.timestamp});
 
         emit DocApproved(documentIndex, studentId, amount);
+    }
+
+    function _rejectDocument(uint256 documentIndex, bytes32 reasonHash) internal {
+        DocumentSubmission storage document = docSubmissions[documentIndex];
+        document.status = SubmissionStatus.Rejected;
+
+        docResults[documentIndex] = DocumentResult({reasonHash: reasonHash, amount: 0, processedAt: block.timestamp});
+
+        emit DocRejected(documentIndex, document.studentId, reasonHash);
     }
 
     function burnFrom(bytes32 studentId, address account, uint256 amount) external onlyAdmin {
@@ -105,28 +127,27 @@ contract StudentManagerImpl is IStudentManager, Admin {
             studentId = studentByAddr[account];
             mileageToken.burnFrom(account, amount);
         }
-        emit MileageBurned(studentId, amount);
+        emit MileageBurned(studentId, account, msg.sender, amount);
     }
 
     function proposeAccountChange(
         address targetAccount
     ) public {
-        bytes32 studentId = studentByAddr[msg.sender];
         require(targetAccount != address(0), "invalid targetAccount");
-        require(studentId != "", "account doesn't exist");
-        require(students[studentId] == msg.sender, "address validation check failed");
+        bytes32 studentId = _validateAccount();
         require(studentByAddr[targetAccount] == "", "targetAccount already exists");
 
-        pendingAccountChanges[studentId] = targetAccount;
+        pendingAccountChanges[studentId] =
+            AccountChangeProposal({targetAccount: targetAccount, createdAt: block.timestamp});
 
-        emit AccountChangeProposed(studentId, targetAccount);
+        emit AccountChangeProposed(studentId, msg.sender, targetAccount);
     }
 
     function confirmAccountChange(
         bytes32 studentId
     ) public {
         address currentAccount = students[studentId];
-        address targetAccount = pendingAccountChanges[studentId];
+        address targetAccount = pendingAccountChanges[studentId].targetAccount;
         uint256 balance = 0;
         bool isParticipated = false;
 
@@ -148,7 +169,7 @@ contract StudentManagerImpl is IStudentManager, Admin {
             mileageToken.transferFrom(currentAccount, targetAccount, balance);
         }
 
-        emit AccountChangeConfirmed(studentId, targetAccount);
+        emit AccountChangeConfirmed(studentId, currentAccount, targetAccount);
         emit AccountChanged(studentId, currentAccount, targetAccount);
     }
 

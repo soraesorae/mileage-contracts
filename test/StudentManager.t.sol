@@ -142,7 +142,7 @@ contract StudentManagerTest is Test {
 
         vm.startPrank(alice);
 
-        vm.expectRevert("unavailable document");
+        vm.expectRevert("invalid documentIndex");
         manager.approveDocument(0, 100, reasonHash);
 
         uint256 index = manager.submitDocument(docHash);
@@ -162,6 +162,7 @@ contract StudentManagerTest is Test {
         assertEq(result.reasonHash, reasonHash);
         assertEq(token.balanceOf(alice), 100);
 
+        console.log("index", index);
         vm.expectRevert("unavailable document");
         manager.approveDocument(index, 200, reasonHash);
 
@@ -182,7 +183,7 @@ contract StudentManagerTest is Test {
         assert(docs.status == IStudentManager.SubmissionStatus.Pending);
 
         vm.expectEmit(address(manager));
-        emit IStudentManager.DocRejected();
+        emit IStudentManager.DocRejected(index, studentId, reasonHash);
         manager.approveDocument(index, 0, reasonHash);
 
         docs = manager.getDocSubmission(index);
@@ -200,11 +201,11 @@ contract StudentManagerTest is Test {
         _registerStudent(studentId, bob);
 
         vm.expectEmit(address(manager));
-        emit IStudentManager.AccountChangeProposed(studentId, charlie);
+        emit IStudentManager.AccountChangeProposed(studentId, bob, charlie);
         vm.prank(bob);
         manager.proposeAccountChange(charlie);
 
-        assertEq(manager.pendingAccountChanges(studentId), charlie);
+        assertEq(manager.getPendingAccountChange(studentId), charlie);
     }
 
     function test_proposeAccountChange_failures() public {
@@ -278,7 +279,7 @@ contract StudentManagerTest is Test {
 
         vm.prank(newAccount);
         vm.expectEmit(address(manager));
-        emit IStudentManager.AccountChangeConfirmed(studentId, newAccount);
+        emit IStudentManager.AccountChangeConfirmed(studentId, bob, newAccount);
         vm.expectEmit(address(manager));
         emit IStudentManager.AccountChanged(studentId, bob, newAccount);
         manager.confirmAccountChange(studentId);
@@ -289,7 +290,7 @@ contract StudentManagerTest is Test {
         assertEq(token.balanceOf(bob), 0);
         assertEq(token.balanceOf(newAccount), 100);
 
-        assertEq(manager.pendingAccountChanges(studentId), address(0));
+        assertEq(manager.getPendingAccountChange(studentId), address(0));
 
         ISwMileageToken.Student[] memory students = token.getRankingRange(1, 100);
         assertEq(students.length, 1);
