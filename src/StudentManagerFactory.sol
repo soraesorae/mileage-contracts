@@ -11,17 +11,23 @@ interface IStudentManagerImpl is IAdmin {
 contract StudentManagerFactory {
     using Clones for address;
 
+    address private _implementation;
+
     event StudentManagerCreated(address indexed contractAddress);
 
-    address private _implementation;
+    constructor(
+        address impl
+    ) {
+        _implementation = impl;
+    }
 
     function implementation() external view returns (address) {
         return _implementation;
     }
 
-    constructor(
+    function setImplementation(
         address impl
-    ) {
+    ) external {
         _implementation = impl;
     }
 

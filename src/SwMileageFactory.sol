@@ -12,9 +12,9 @@ interface ISwMileageTokenImpl is IAdmin {
 contract SwMileageTokenFactory {
     using Clones for address;
 
-    event MileageTokenCreated(address indexed tokenAddress);
-
     address private _implementation;
+
+    event MileageTokenCreated(address indexed tokenAddress);
 
     constructor(
         address impl
@@ -24,6 +24,12 @@ contract SwMileageTokenFactory {
 
     function implementaion() external view returns (address) {
         return _implementation;
+    }
+
+    function setImplementation(
+        address impl
+    ) external {
+        _implementation = impl;
     }
 
     function deploy(string memory name, string memory symbol) external returns (address) {

@@ -5,7 +5,6 @@ import {KIP7} from "kaia-contracts/contracts/KIP/token/KIP7/KIP7.sol";
 import {IKIP7} from "kaia-contracts/contracts/KIP/token/KIP7/IKIP7.sol";
 import {KIP7Burnable} from "kaia-contracts/contracts/KIP/token/KIP7/extensions/KIP7Burnable.sol";
 import {IKIP7Burnable} from "kaia-contracts/contracts/KIP/token/KIP7/extensions/IKIP7Burnable.sol";
-import {Pausable} from "kaia-contracts/contracts/security/Pausable.sol";
 import {Admin} from "./Admin.sol";
 import {Initializable} from "kaia-contracts/contracts/proxy/utils/Initializable.sol";
 import {Context} from "kaia-contracts/contracts/utils/Context.sol";
@@ -15,16 +14,7 @@ import {ISortedList} from "./ISortedList.sol";
 import {ISwMileageToken} from "./ISwMileageToken.sol";
 
 // TODO: new contract for multiple owner instead of `Ownable`
-contract SwMileageTokenImpl is
-    Context,
-    ISwMileageToken,
-    KIP7Burnable,
-    Initializable,
-    Pausable,
-    Admin,
-    ISortedList,
-    SortedList
-{
+contract SwMileageTokenImpl is Context, ISwMileageToken, KIP7Burnable, Initializable, Admin, ISortedList, SortedList {
     string private _name;
     string private _symbol;
 
@@ -59,20 +49,12 @@ contract SwMileageTokenImpl is
         return super.supportsInterface(interfaceId);
     }
 
-    function pause() public onlyAdmin {
-        _pause();
-    }
-
-    function unpause() public onlyAdmin {
-        _unpause();
-    }
-
     /// @dev mint mileage token
     ///
     /// @param account `to` account
     /// @param amount token amount
     ///
-    function mint(address account, uint256 amount) public onlyAdmin whenNotPaused {
+    function mint(address account, uint256 amount) public onlyAdmin {
         _mint(account, amount);
     }
 
@@ -95,13 +77,7 @@ contract SwMileageTokenImpl is
     /// @param account target account
     /// @param amount amount
     ///
-    function burnFrom(
-        address account,
-        uint256 amount
-    ) public override (IKIP7Burnable, KIP7Burnable) onlyAdmin whenNotPaused {
-        // if (_msgSender() != owner()) {
-        //     _spendAllowance(account, _msgSender(), amount);
-        // }
+    function burnFrom(address account, uint256 amount) public override (IKIP7Burnable, KIP7Burnable) onlyAdmin {
         _burn(account, amount);
     }
 
