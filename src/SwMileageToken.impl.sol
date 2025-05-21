@@ -63,12 +63,12 @@ contract SwMileageTokenImpl is Context, ISwMileageToken, KIP7Burnable, Initializ
     function burn(
         uint256 /* amount */
     ) public pure override (IKIP7Burnable, KIP7Burnable) {
-        require(false, "burn not allowed");
+        require(false, "SwMileageToken: burn is not allowed");
     }
     ////
 
     function _approve(address, /* owner */ address, /* spender */ uint256 /* amount */ ) internal pure override {
-        require(false, "approval not allowed");
+        require(false, "SwMileageToken: approval is not allowed");
     }
 
     /// @dev KIP7Burnable burnFrom
@@ -91,7 +91,7 @@ contract SwMileageTokenImpl is Context, ISwMileageToken, KIP7Burnable, Initializ
     }
 
     function _beforeTokenTransfer(address, address, uint256) internal view override {
-        require(isAdmin(msg.sender), "admin only");
+        require(isAdmin(msg.sender), "SwMileageToken: admin only operation");
     }
 
     function _afterTokenTransfer(address from, address to, uint256 /* amount */ ) internal virtual override {

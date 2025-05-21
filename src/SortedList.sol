@@ -33,7 +33,7 @@ abstract contract SortedList is ISortedList {
     // util function for testing
     // Use this function only for testing
     function _push(address addr, uint256 value) internal virtual {
-        require(_participated[addr] == false, "address already exists");
+        require(_participated[addr] == false, "address exists");
 
         _list[addr] = Node({next: _head, value: value});
         _head = addr;
@@ -43,7 +43,7 @@ abstract contract SortedList is ISortedList {
 
     // Use this function only for testing
     function _pop() internal virtual {
-        require(_head != END_OF_LIST, "empty list");
+        require(_head != END_OF_LIST, "list is empty");
 
         address next = _list[_head].next;
         _participated[_head] = false;
@@ -87,7 +87,7 @@ abstract contract SortedList is ISortedList {
     }
 
     function _getElementRange(uint256 from, uint256 to) internal view virtual returns (bytes memory) {
-        require(from > 0, "from == 0");
+        require(from > 0, "from is zero");
         require(from <= to, "to < from");
 
         if (from > _listLength) {
@@ -147,8 +147,8 @@ abstract contract SortedList is ISortedList {
     }
 
     function _removeElement(address target, bool _event) internal {
-        require(_participated[target], "not found in the list");
-        require(_listLength > 0, "length = 0");
+        require(_participated[target], "not in list");
+        require(_listLength > 0, "list is empty");
 
         address ptr = _head;
         address prev = DUMMY;

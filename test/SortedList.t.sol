@@ -206,11 +206,11 @@ contract SortedListTest is Test {
     }
 
     function test_removeElement_addressNotFound() public {
-        vm.expectRevert("not found in the list");
+        vm.expectRevert("not in list");
         list.remove(alice);
 
         list.update(bob, 100);
-        vm.expectRevert("not found in the list");
+        vm.expectRevert("not in list");
         list.remove(alice);
     }
 
@@ -381,18 +381,18 @@ contract SortedListTest is Test {
     }
 
     function test_reverts() public {
-        vm.expectRevert("not found in the list");
+        vm.expectRevert("not in list");
         list.remove(alice);
 
         list.update(alice, 100);
-        vm.expectRevert("address already exists");
+        vm.expectRevert("address exists");
         list.push(alice, 200);
 
         list.remove(alice);
-        vm.expectRevert("empty list");
+        vm.expectRevert("list is empty");
         list.pop();
 
-        vm.expectRevert("from == 0");
+        vm.expectRevert("from is zero");
         list.getRange(0, 5);
 
         vm.expectRevert("to < from");
@@ -526,7 +526,7 @@ contract SortedListTest is Test {
     }
 
     function test_getElementRange_invalidParameters() public {
-        vm.expectRevert("from == 0");
+        vm.expectRevert("from is zero");
         list.getRange(0, 5);
 
         vm.expectRevert("to < from");

@@ -26,8 +26,10 @@ interface IStudentManager {
         Rejected
     }
 
+    event StudentRegistered(bytes32 indexed studentId, address indexed account);
+
     event DocSubmitted(uint256 indexed documentIndex, bytes32 indexed studentId, bytes32 docHash);
-    event DocApproved(uint256 indexed documentIndex, bytes32 indexed studentId, uint256 amount);
+    event DocApproved(uint256 indexed documentIndex, bytes32 indexed studentId, uint256 amount, bytes32 reasonHash);
     event DocRejected(uint256 indexed documentIndex, bytes32 indexed studentId, bytes32 reasonHash);
 
     event AccountChangeProposed(bytes32 indexed studentId, address indexed account, address indexed targetAccount);

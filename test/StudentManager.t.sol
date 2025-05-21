@@ -50,11 +50,38 @@ contract StudentManagerTest is Test {
     function test_registerStudent() public {
         // Case 1
         bytes32 studentId = keccak256(abi.encode("studentId", "123456789"));
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.StudentRegistered(studentId, alice);
+        vm.prank(alice);
+        manager.registerStudent(studentId);
+
+        console.logBytes32(studentId);
+        assertEq(manager.students(studentId), alice);
+        assertEq(manager.studentByAddr(alice), studentId);
+    }
+
+    function test_registerStudent_fail() public {
+        bytes32 studentId = keccak256(abi.encode("studentId", "123456789"));
+        bytes32 studentId2 = keccak256(abi.encode("studentId2", "123456789"));
+
         vm.prank(alice);
         manager.registerStudent(studentId);
         console.logBytes32(studentId);
         assertEq(manager.students(studentId), alice);
         assertEq(manager.studentByAddr(alice), studentId);
+
+        vm.expectRevert("StudentManager: address already registered");
+        vm.prank(alice);
+        manager.registerStudent(studentId2);
+
+        vm.expectRevert("StudentManager: student ID already registered");
+        vm.prank(alice);
+        manager.registerStudent(studentId);
+
+        vm.expectRevert("StudentManager: student ID already registered");
+        vm.prank(bob);
+        manager.registerStudent(studentId);
     }
 
     function test_registerStudent_existsAccount() public {
@@ -68,7 +95,7 @@ contract StudentManagerTest is Test {
         assertEq(manager.studentByAddr(alice), studentId);
 
         // Case 2
-        vm.expectRevert();
+        vm.expectRevert("StudentManager: address already registered");
         vm.prank(alice);
         manager.registerStudent(studentId2);
     }
@@ -83,7 +110,7 @@ contract StudentManagerTest is Test {
         assertEq(manager.studentByAddr(alice), studentId);
 
         // Case 2
-        vm.expectRevert();
+        vm.expectRevert("StudentManager: student ID already registered");
         vm.prank(bob);
         manager.registerStudent(studentId);
     }
@@ -91,7 +118,7 @@ contract StudentManagerTest is Test {
     function test_submitDocument_notFound() public {
         // Case 1
         bytes32 docHash = keccak256("THIS IS TEST DOCUMENT");
-        vm.expectRevert("account doesn't exist");
+        vm.expectRevert("StudentManager: unregistered address");
         vm.prank(bob);
         manager.submitDocument(docHash);
     }
@@ -105,7 +132,7 @@ contract StudentManagerTest is Test {
         vm.prank(alice);
         manager.changeAccount(studentId, charlie);
 
-        vm.expectRevert("address validation check failed");
+        vm.expectRevert("StudentManager: unauthorized student ID");
         vm.prank(bob);
         manager.submitDocument(docHash);
     }
@@ -153,7 +180,7 @@ contract StudentManagerTest is Test {
 
         vm.startPrank(alice);
 
-        vm.expectRevert("invalid documentIndex");
+        vm.expectRevert("StudentManager: document index out of range");
         manager.approveDocument(0, 100, reasonHash);
 
         // Case 2
@@ -164,7 +191,7 @@ contract StudentManagerTest is Test {
         vm.expectEmit(address(token));
         emit IKIP7.Transfer(address(0), alice, 100);
         vm.expectEmit(address(manager));
-        emit IStudentManager.DocApproved(index, studentId, 100);
+        emit IStudentManager.DocApproved(index, studentId, 100, reasonHash);
         manager.approveDocument(index, 100, reasonHash);
 
         docs = manager.getDocSubmission(index);
@@ -176,7 +203,7 @@ contract StudentManagerTest is Test {
 
         // Case 3
         console.log("index", index);
-        vm.expectRevert("unavailable document");
+        vm.expectRevert("StudentManager: document not pending");
         manager.approveDocument(index, 200, reasonHash);
 
         vm.stopPrank();
@@ -240,11 +267,11 @@ contract StudentManagerTest is Test {
 
         assertEq(manager.students(studentId1), dummy2);
 
-        vm.expectRevert("targetAccount already exists");
+        vm.expectRevert("StudentManager: target address already registered");
         vm.prank(dummy2);
         manager.proposeAccountChange(dummy1);
 
-        vm.expectRevert("no pending account change");
+        vm.expectRevert("StudentManager: no pending account change");
         vm.prank(dummy1);
         manager.confirmAccountChange(studentId1);
     }
@@ -257,19 +284,19 @@ contract StudentManagerTest is Test {
         _registerStudent(studentId, bob);
         _registerStudent(studentId2, charlie);
 
-        vm.expectRevert("invalid targetAccount");
+        vm.expectRevert("StudentManager: invalid target account");
         vm.prank(charlie);
         manager.proposeAccountChange(address(0));
 
         // Case 2
-        vm.expectRevert("targetAccount already exists");
+        vm.expectRevert("StudentManager: target address already registered");
         vm.prank(bob);
         manager.proposeAccountChange(charlie);
 
         // Case 3
         address nonRegisteredAccount = makeAddr("nonRegistered");
 
-        vm.expectRevert("account doesn't exist");
+        vm.expectRevert("StudentManager: unregistered address");
         vm.prank(nonRegisteredAccount);
         manager.proposeAccountChange(makeAddr("newAccount"));
 
@@ -277,7 +304,7 @@ contract StudentManagerTest is Test {
         vm.prank(alice);
         manager.changeAccount(studentId, alice);
 
-        vm.expectRevert("address validation check failed");
+        vm.expectRevert("StudentManager: unauthorized student ID");
         vm.prank(bob);
         manager.proposeAccountChange(makeAddr("newAccount"));
 
@@ -294,12 +321,12 @@ contract StudentManagerTest is Test {
         vm.prank(alice);
         manager.changeAccount(studentId3, dummy2);
 
+        vm.expectRevert("StudentManager: no pending account change");
         vm.prank(dummy2);
-        vm.expectRevert("no pending account change");
         manager.confirmAccountChange(studentId3);
 
+        vm.expectRevert("StudentManager: unauthorized student ID");
         vm.prank(dummy1);
-        vm.expectRevert("address validation check failed");
         manager.proposeAccountChange(dummy2);
     }
 
@@ -360,7 +387,7 @@ contract StudentManagerTest is Test {
         _registerStudent(studentId, bob);
 
         vm.prank(newAccount);
-        vm.expectRevert("no pending account change");
+        vm.expectRevert("StudentManager: no pending account change");
         manager.confirmAccountChange(studentId);
 
         // Case 2
@@ -368,7 +395,7 @@ contract StudentManagerTest is Test {
         manager.proposeAccountChange(newAccount);
 
         vm.prank(wrongAccount);
-        vm.expectRevert("unauthorized confirmation");
+        vm.expectRevert("StudentManager: confirmation must be from target account");
         manager.confirmAccountChange(studentId);
 
         // Case 3
@@ -384,7 +411,7 @@ contract StudentManagerTest is Test {
         _registerStudent(studentId3, dummy1);
 
         vm.prank(dummy1);
-        vm.expectRevert("targetAccount already exists");
+        vm.expectRevert("StudentManager: target address already registered");
         manager.confirmAccountChange(studentId2);
     }
 
@@ -453,7 +480,7 @@ contract StudentManagerTest is Test {
         manager.changeAccount(studentId, anotherAccount);
 
         vm.prank(secondAccount);
-        vm.expectRevert("address validation check failed");
+        vm.expectRevert("StudentManager: unauthorized student ID");
         manager.proposeAccountChange(anotherAccount);
     }
 
@@ -562,7 +589,7 @@ contract StudentManagerTest is Test {
         vm.prank(dummy0);
         manager.submitDocument(keccak256("DOCUMENT FROM NEW"));
 
-        vm.expectRevert("address validation check failed");
+        vm.expectRevert("StudentManager: unauthorized student ID");
         vm.prank(original);
         manager.submitDocument(keccak256("DOCUMENT FROM ORIGINAL"));
 
@@ -598,11 +625,11 @@ contract StudentManagerTest is Test {
         manager.updateStudentRecord(studentId1, dummy2, true);
 
         // Case 5
-        vm.expectRevert("account doesn't exist");
+        vm.expectRevert("StudentManager: unregistered address");
         vm.prank(dummy1);
         manager.submitDocument(docHash);
 
-        vm.expectRevert("account doesn't exist");
+        vm.expectRevert("StudentManager: unregistered address");
         vm.prank(dummy1);
         manager.proposeAccountChange(dummy2);
 
@@ -621,7 +648,7 @@ contract StudentManagerTest is Test {
         vm.prank(alice);
         manager.updateStudentRecord(studentId3, dummy5, false);
 
-        vm.expectRevert("no pending account change");
+        vm.expectRevert("StudentManager: no pending account change");
         vm.prank(dummy4);
         manager.confirmAccountChange(studentId3);
     }
@@ -698,7 +725,7 @@ contract StudentManagerTest is Test {
         manager.confirmAccountChange(studentId1);
 
         vm.prank(targetAccount);
-        vm.expectRevert("targetAccount already exists");
+        vm.expectRevert("StudentManager: target address already registered");
         manager.confirmAccountChange(studentId2);
     }
 
@@ -712,7 +739,7 @@ contract StudentManagerTest is Test {
         _registerStudent(studentId2, eve);
 
         vm.prank(charlie);
-        vm.expectRevert("targetAccount already exists");
+        vm.expectRevert("StudentManager: target address already registered");
         manager.proposeAccountChange(eve);
 
         address dummy1 = makeAddr("dummy1");
@@ -729,7 +756,7 @@ contract StudentManagerTest is Test {
         manager.confirmAccountChange(studentId3);
 
         vm.prank(dummy2);
-        vm.expectRevert("targetAccount already exists");
+        vm.expectRevert("StudentManager: target address already registered");
         manager.proposeAccountChange(dummy1);
 
         vm.prank(dummy2);
@@ -739,7 +766,7 @@ contract StudentManagerTest is Test {
         manager.confirmAccountChange(studentId3);
 
         vm.prank(dummy3);
-        vm.expectRevert("targetAccount already exists");
+        vm.expectRevert("StudentManager: target address already registered");
         manager.proposeAccountChange(dummy1);
     }
 }

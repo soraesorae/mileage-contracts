@@ -75,7 +75,7 @@ contract SwMileageTokenTest is Test {
     function test_burn_Admin() public {
         vm.startPrank(alice);
         mileageToken.mint(bob, 10);
-        vm.expectRevert("burn not allowed");
+        vm.expectRevert("SwMileageToken: burn is not allowed");
         mileageToken.burn(5);
 
         assertEq(mileageToken.balanceOf(bob), 10);
@@ -86,7 +86,7 @@ contract SwMileageTokenTest is Test {
         mileageToken.mint(bob, 10);
 
         vm.prank(bob);
-        vm.expectRevert("burn not allowed");
+        vm.expectRevert("SwMileageToken: burn is not allowed");
         mileageToken.burn(5);
 
         assertEq(mileageToken.balanceOf(bob), 10);
@@ -135,7 +135,7 @@ contract SwMileageTokenTest is Test {
     }
 
     function test_burnFrom_0() public {
-        vm.expectRevert("not found in the list");
+        vm.expectRevert("not in list");
         vm.startPrank(alice);
         mileageToken.burnFrom(bob, 0);
     }
@@ -415,7 +415,7 @@ contract SwMileageTokenTest is Test {
         vm.stopPrank();
 
         vm.prank(bob);
-        vm.expectRevert("admin only");
+        vm.expectRevert("SwMileageToken: admin only operation");
         mileageToken.transfer(alice, 50);
     }
 
@@ -432,14 +432,14 @@ contract SwMileageTokenTest is Test {
 
     function test_approve_NotPermitted() public {
         vm.prank(bob);
-        vm.expectRevert("approval not allowed");
+        vm.expectRevert("SwMileageToken: approval is not allowed");
         mileageToken.approve(bob, 50);
     }
 
     function test_getRankingRange_InvalidParams() public {
         vm.startPrank(alice);
 
-        vm.expectRevert("from == 0");
+        vm.expectRevert("from is zero");
         mileageToken.getRankingRange(0, 10);
 
         vm.expectRevert("to < from");
