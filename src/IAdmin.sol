@@ -8,6 +8,9 @@ import {Context} from "kaia-contracts/contracts/utils/Context.sol";
 // - kaia-contracts/contracts/access/Ownable.sol
 // - kaia-contracts/contracts/access/AccessControl.sol
 interface IAdmin {
+    event AdminAdded(address indexed account);
+    event AdminRemoved(address indexed account);
+
     function isAdmin(
         address account
     ) external view returns (bool);

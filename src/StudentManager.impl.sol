@@ -55,11 +55,8 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
     function registerStudent(
         bytes32 studentId
     ) external whenNotPaused {
-        require(
-            studentId != bytes32(0) && students[studentId] == address(0),
-            "StudentManager: student ID already registered"
-        );
-        require(studentByAddr[msg.sender] == bytes32(0), "StudentManager: address already registered");
+        require(studentId != bytes32(0) && students[studentId] == address(0), "student ID already registered");
+        require(studentByAddr[msg.sender] == bytes32(0), "address already registered");
         students[studentId] = msg.sender;
         studentByAddr[msg.sender] = studentId;
         emit StudentRegistered(studentId, msg.sender);
@@ -68,9 +65,9 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
     function proposeAccountChange(
         address targetAccount
     ) external whenNotPaused {
-        require(targetAccount != address(0) && targetAccount != msg.sender, "StudentManager: invalid target account");
+        require(targetAccount != address(0) && targetAccount != msg.sender, "invalid target account");
         bytes32 studentId = _validateAccount();
-        require(studentByAddr[targetAccount] == bytes32(0), "StudentManager: target address already registered");
+        require(studentByAddr[targetAccount] == bytes32(0), "target address already registered");
 
         pendingAccountChanges[studentId] =
             AccountChangeProposal({targetAccount: targetAccount, createdAt: block.timestamp});
@@ -86,9 +83,9 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
         uint256 balance = 0;
         bool isParticipated = false;
 
-        require(targetAccount != address(0), "StudentManager: no pending account change");
-        require(targetAccount == msg.sender, "StudentManager: confirmation must be from target account");
-        require(studentByAddr[targetAccount] == bytes32(0), "StudentManager: target address already registered");
+        require(targetAccount != address(0), "no pending account change");
+        require(targetAccount == msg.sender, "confirmation must be from target account");
+        require(studentByAddr[targetAccount] == bytes32(0), "target address already registered");
 
         if (_mileageToken.participated(currentAccount)) {
             isParticipated = true;
@@ -146,9 +143,9 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
     }
 
     function approveDocument(uint256 documentIndex, uint256 amount, bytes32 reasonHash) external onlyAdmin {
-        require(documentIndex < documentsCount, "StudentManager: document index out of range");
+        require(documentIndex < documentsCount, "document index out of range");
         DocumentSubmission storage document = docSubmissions[documentIndex];
-        require(document.status == SubmissionStatus.Pending, "StudentManager: document not pending");
+        require(document.status == SubmissionStatus.Pending, "document not pending");
 
         if (amount == 0) {
             _rejectDocument(documentIndex, reasonHash);
@@ -216,7 +213,7 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
 
     // Imediately update student record
     function updateStudentRecord(bytes32 studentId, address targetAccount, bool _clear) external onlyAdmin {
-        require(studentId != bytes32(0), "StudentManager: empty student ID");
+        require(studentId != bytes32(0), "empty student ID");
 
         address currentAccount = students[studentId];
 
@@ -237,7 +234,7 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
     function transferFromToken(bytes32 fromStudentId, bytes32 toStudentId, uint256 amount) external onlyAdmin {
         address from = students[fromStudentId];
         address to = students[toStudentId];
-        require(from != address(0) && to != address(0), "StudentManager: unregistered students detected");
+        require(from != address(0) && to != address(0), "unregistered students detected");
         // transfer token directly
         _mileageToken.transferFrom(from, to, amount);
     }
@@ -246,8 +243,8 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
 
     function _validateAccount() internal view returns (bytes32) {
         bytes32 studentId = studentByAddr[msg.sender];
-        require(studentId != bytes32(0), "StudentManager: unregistered address");
-        require(students[studentId] == msg.sender, "StudentManager: unauthorized student ID");
+        require(studentId != bytes32(0), "unregistered address");
+        require(students[studentId] == msg.sender, "unauthorized student ID");
         return studentId;
     }
 

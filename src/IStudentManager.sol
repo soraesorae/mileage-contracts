@@ -47,13 +47,19 @@ interface IStudentManager {
         address addr
     ) external;
 
-    function getDocSubmission(
-        uint256 documentIndex
-    ) external view returns (DocumentSubmission memory);
+    function mileageToken() external view returns (address);
 
-    function getDocResult(
-        uint256 documentIndex
-    ) external view returns (DocumentResult memory);
+    function registerStudent(
+        bytes32 studentId
+    ) external;
+
+    function proposeAccountChange(
+        address targetAccount
+    ) external;
+
+    function confirmAccountChange(
+        bytes32 studentId
+    ) external;
 
     function getPendingAccountChange(
         bytes32 studentId
@@ -67,27 +73,25 @@ interface IStudentManager {
         bytes32 studentId
     ) external view returns (bool);
 
-    function registerStudent(
-        bytes32 studentId
-    ) external;
-
     function submitDocument(
         bytes32 docHash
     ) external returns (uint256);
 
     function approveDocument(uint256 documentIndex, uint256 amount, bytes32 reasonHash) external;
 
+    function getDocSubmission(
+        uint256 documentIndex
+    ) external view returns (DocumentSubmission memory);
+
+    function getDocResult(
+        uint256 documentIndex
+    ) external view returns (DocumentResult memory);
+
     function burnFrom(bytes32 studendtId, address account, uint256 amount) external;
 
-    function proposeAccountChange(
-        address targetAccount
-    ) external;
-
-    function confirmAccountChange(
-        bytes32 studentId
-    ) external;
-
     function changeAccount(bytes32 studentId, address targetAccount) external;
+
     function updateStudentRecord(bytes32 studentId, address targetAccount, bool _clear) external;
+
     function transferFromToken(bytes32 fromStudentId, bytes32 toStudentId, uint256 amount) external;
 }

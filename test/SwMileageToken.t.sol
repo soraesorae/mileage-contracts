@@ -75,7 +75,7 @@ contract SwMileageTokenTest is Test {
     function test_burn_Admin() public {
         vm.startPrank(alice);
         mileageToken.mint(bob, 10);
-        vm.expectRevert("SwMileageToken: burn is not allowed");
+        vm.expectRevert("burn is not allowed");
         mileageToken.burn(5);
 
         assertEq(mileageToken.balanceOf(bob), 10);
@@ -86,7 +86,7 @@ contract SwMileageTokenTest is Test {
         mileageToken.mint(bob, 10);
 
         vm.prank(bob);
-        vm.expectRevert("SwMileageToken: burn is not allowed");
+        vm.expectRevert("burn is not allowed");
         mileageToken.burn(5);
 
         assertEq(mileageToken.balanceOf(bob), 10);
@@ -415,7 +415,7 @@ contract SwMileageTokenTest is Test {
         vm.stopPrank();
 
         vm.prank(bob);
-        vm.expectRevert("SwMileageToken: admin only operation");
+        vm.expectRevert("admin only operation");
         mileageToken.transfer(alice, 50);
     }
 
@@ -432,7 +432,7 @@ contract SwMileageTokenTest is Test {
 
     function test_approve_NotPermitted() public {
         vm.prank(bob);
-        vm.expectRevert("SwMileageToken: approval is not allowed");
+        vm.expectRevert("approval is not allowed");
         mileageToken.approve(bob, 50);
     }
 

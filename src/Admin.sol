@@ -1,17 +1,14 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.13;
 
-import {Pausable} from "kaia-contracts/contracts/security/Pausable.sol";
 import {Context} from "kaia-contracts/contracts/utils/Context.sol";
+import {IAdmin} from "./IAdmin.sol";
 
 // References
 // - kaia-contracts/contracts/access/Ownable.sol
 // - kaia-contracts/contracts/access/AccessControl.sol
-abstract contract Admin is Context {
+abstract contract Admin is Context, IAdmin {
     mapping(address => bool) private _admin;
-
-    event AddAdministrator(address indexed account);
-    event RemoveAdministrator(address indexed account);
 
     constructor() {
         _addAdmin(_msgSender());
@@ -46,7 +43,7 @@ abstract contract Admin is Context {
     ) internal virtual {
         if (!_admin[account]) {
             _admin[account] = true;
-            emit AddAdministrator(account);
+            emit AdminAdded(account);
         }
     }
 
@@ -55,7 +52,7 @@ abstract contract Admin is Context {
     ) internal virtual {
         if (_admin[account]) {
             _admin[account] = false;
-            emit RemoveAdministrator(account);
+            emit AdminRemoved(account);
         }
     }
 }
