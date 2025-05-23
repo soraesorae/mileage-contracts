@@ -84,6 +84,29 @@ contract StudentManagerTest is Test {
         manager.registerStudent(studentId);
     }
 
+    function test_registerStudent_emptyId() public {
+        bytes32 studentId = bytes32(0);
+        vm.expectRevert("empty student ID");
+        vm.prank(alice);
+        manager.registerStudent(studentId);
+    }
+
+    function test_registerStudent_alreadyAddrReigstered() public {
+        bytes32 studentId1 = keccak256(abi.encode("studentId1", "123456789"));
+        vm.prank(bob);
+        manager.registerStudent(studentId1);
+
+        assertEq(manager.students(studentId1), bob);
+        assertEq(manager.studentByAddr(bob), studentId1);
+
+        vm.prank(bob);
+        bytes32 studentId2 = keccak256(abi.encode("studentId2", "123456789"));
+
+        vm.expectRevert("address already registered");
+        manager.registerStudent(studentId2);
+        vm.stopPrank();
+    }
+
     function test_registerStudent_existsAccount() public {
         // Case 1
         bytes32 studentId = keccak256(abi.encode("studentId", "123456789"));
@@ -484,6 +507,39 @@ contract StudentManagerTest is Test {
         manager.proposeAccountChange(anotherAccount);
     }
 
+    function test_burnFrom() public {
+        bytes32 studentId = keccak256(abi.encode("studentId", "123456789"));
+
+        _registerStudent(studentId, bob);
+
+        bytes32 docHash = keccak256("THIS IS TEST DOCUMENT");
+        bytes32 reasonHash = keccak256("THIS IS TEST REASON");
+
+        vm.prank(bob);
+        uint256 docIndex = manager.submitDocument(docHash);
+
+        vm.prank(alice);
+        manager.approveDocument(docIndex, 100, reasonHash);
+
+        assertEq(token.balanceOf(bob), 100);
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.MileageBurned(studentId, bob, alice, 50);
+
+        vm.prank(alice);
+        manager.burnFrom(studentId, address(0), 50);
+
+        assertEq(token.balanceOf(bob), 50);
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.MileageBurned(studentId, bob, alice, 50);
+
+        vm.prank(alice);
+        manager.burnFrom(bytes32(0), bob, 50);
+
+        assertEq(token.balanceOf(bob), 0);
+    }
+
     function test_accountChange_zeroBalance() public {
         // Case 1
         bytes32 studentId = keccak256(abi.encode("studentId", "123456789"));
@@ -653,6 +709,18 @@ contract StudentManagerTest is Test {
         manager.confirmAccountChange(studentId3);
     }
 
+    function test_updateStudentRecord_emptyId() public {
+        bytes32 studentId = bytes32(0);
+
+        vm.expectRevert("empty student ID");
+        vm.prank(alice);
+        manager.updateStudentRecord(studentId, bob, false);
+
+        vm.expectRevert("empty student ID");
+        vm.prank(alice);
+        manager.updateStudentRecord(studentId, bob, true);
+    }
+
     function test_transferFromToken() public {
         // Case 1
         bytes32 studentId1 = keccak256(abi.encode("studentId1", "123456789"));
@@ -705,6 +773,26 @@ contract StudentManagerTest is Test {
         vm.expectRevert("KIP7: transfer amount exceeds balance");
         vm.prank(alice);
         manager.transferFromToken(studentId4, studentId5, 200);
+    }
+
+    function test_transferFromToken_notRegistered() public {
+        bytes32 studentId1 = keccak256(abi.encode("studentId1", "123456789"));
+        bytes32 studentId2 = keccak256(abi.encode("studentId2", "987654321"));
+
+        _registerStudent(studentId1, bob);
+        _registerStudent(studentId2, charlie);
+
+        vm.expectRevert("students not registered");
+        vm.prank(alice);
+        manager.transferFromToken(studentId1, bytes32(0), 50);
+
+        vm.expectRevert("students not registered");
+        vm.prank(alice);
+        manager.transferFromToken(bytes32(0), studentId2, 50);
+
+        vm.expectRevert("students not registered");
+        vm.prank(alice);
+        manager.transferFromToken(bytes32(0), bytes32(0), 50);
     }
 
     function test_targetAccountAlreadyExists1() public {
