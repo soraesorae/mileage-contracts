@@ -55,7 +55,8 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
     function registerStudent(
         bytes32 studentId
     ) external whenNotPaused {
-        require(studentId != bytes32(0) && students[studentId] == address(0), "student ID already registered");
+        require(studentId != bytes32(0), "empty student ID");
+        require(students[studentId] == address(0), "student ID already registered");
         require(studentByAddr[msg.sender] == bytes32(0), "address already registered");
         students[studentId] = msg.sender;
         studentByAddr[msg.sender] = studentId;
@@ -234,7 +235,7 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
     function transferFromToken(bytes32 fromStudentId, bytes32 toStudentId, uint256 amount) external onlyAdmin {
         address from = students[fromStudentId];
         address to = students[toStudentId];
-        require(from != address(0) && to != address(0), "unregistered students detected");
+        require(from != address(0) && to != address(0), "students not registered");
         // transfer token directly
         _mileageToken.transferFrom(from, to, amount);
     }
