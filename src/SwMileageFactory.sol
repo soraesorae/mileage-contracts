@@ -38,4 +38,11 @@ contract SwMileageTokenFactory {
         emit MileageTokenCreated(clone);
         return address(clone);
     }
+
+    function deployWithAdmin(string memory name, string memory symbol, address admin) external returns (address) {
+        address clone = _implementation.clone();
+        ISwMileageTokenImpl(clone).initialize(name, symbol, admin);
+        emit MileageTokenCreated(clone);
+        return address(clone);
+    }
 }
