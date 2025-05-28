@@ -857,4 +857,45 @@ contract StudentManagerTest is Test {
         vm.expectRevert("target address already registered");
         manager.proposeAccountChange(dummy1);
     }
+
+    function test_mint() public {
+        // Case 1: mint by studentId
+        bytes32 studentId = keccak256(abi.encode("studentId", "123456789"));
+        _registerStudent(studentId, bob);
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.MileageMinted(studentId, bob, alice, 100);
+
+        vm.prank(alice);
+        manager.mint(studentId, address(0), 100);
+
+        assertEq(token.balanceOf(bob), 100);
+
+        // Case 2: mint by account address
+        vm.expectEmit(address(manager));
+        emit IStudentManager.MileageMinted(studentId, bob, alice, 150);
+
+        vm.prank(alice);
+        manager.mint(bytes32(0), bob, 150);
+
+        assertEq(token.balanceOf(bob), 250);
+
+        // Case 3
+        bytes32 studentId2 = keccak256(abi.encode("studentId2", "987654321"));
+        _registerStudent(studentId2, charlie);
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.MileageMinted(studentId2, charlie, alice, 200);
+
+        vm.prank(alice);
+        manager.mint(studentId2, address(0), 200);
+
+        assertEq(token.balanceOf(charlie), 200);
+
+        assertEq(token.balanceOf(bob), 250);
+        assertEq(token.balanceOf(charlie), 200);
+
+        ISwMileageToken.Student[] memory students = token.getRankingRange(1, 100);
+        assertEq(students.length, 2);
+    }
 }

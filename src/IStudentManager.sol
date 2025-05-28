@@ -37,6 +37,7 @@ interface IStudentManager {
 
     event AccountChanged(bytes32 indexed studentId, address indexed account, address indexed targetAccount);
 
+    event MileageMinted(bytes32 indexed studentId, address indexed account, address indexed admin, uint256 amount);
     event MileageBurned(bytes32 indexed studentId, address indexed account, address indexed admin, uint256 amount);
 
     event StudentRecordUpdated(bytes32 indexed studentId, address indexed account, address indexed targetAccount);

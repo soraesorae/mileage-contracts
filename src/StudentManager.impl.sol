@@ -178,6 +178,18 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
 
     ////////////////////////// admin utilities
 
+    function mint(bytes32 studentId, address account, uint256 amount) external onlyAdmin {
+        // is valid account, studentId?
+        if (account == address(0)) {
+            account = students[studentId];
+            _mileageToken.mint(account, amount);
+        } else {
+            studentId = studentByAddr[account];
+            _mileageToken.mint(account, amount);
+        }
+        emit MileageMinted(studentId, account, msg.sender, amount);
+    }
+
     function burnFrom(bytes32 studentId, address account, uint256 amount) external onlyAdmin {
         // is valid account, studentId?
         if (account == address(0)) {
