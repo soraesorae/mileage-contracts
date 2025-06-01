@@ -65,4 +65,4 @@ Also, you can deploy with `forge script`, but it doesn't generate `artifacts/dep
 forge script script/SwMileageDeploy.s.sol --broadcast --skip-simulation --gas-estimate-multiplier 500
 ```
 
-In our case, forge underestimates gas used of `deploy(...)` function in certain chain. Therefore, use temporarily `--gas-estimate-multiplier 500` to overestimate gas used.
+In our case, forge underestimates gas used of `deploy(...)` function in a certain chain. Therefore, use temporarily `--gas-estimate-multiplier 500` to overestimate gas used.
