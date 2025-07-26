@@ -203,6 +203,8 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
     }
 
     function changeAccount(bytes32 studentId, address targetAccount) external onlyAdmin {
+        require(studentByAddr[targetAccount] == bytes32(0), "target address already registered");
+        require(targetAccount != address(0), "invalid target account");
         address currentAccount = students[studentId];
         uint256 balance = 0;
         bool isParticipated = false;
