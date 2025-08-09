@@ -182,9 +182,12 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
         // is valid account, studentId?
         if (account == address(0)) {
             account = students[studentId];
+            require(account != address(0), "student not registered");
             _mileageToken.mint(account, amount);
         } else {
             studentId = studentByAddr[account];
+            require(studentId != bytes32(0), "unregistered address");
+            require(students[studentId] == account, "unauthorized student ID");
             _mileageToken.mint(account, amount);
         }
         emit MileageMinted(studentId, account, msg.sender, amount);
@@ -194,9 +197,12 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
         // is valid account, studentId?
         if (account == address(0)) {
             account = students[studentId];
+            require(account != address(0), "student not registered");
             _mileageToken.burnFrom(account, amount);
         } else {
             studentId = studentByAddr[account];
+            require(studentId != bytes32(0), "unregistered address");
+            require(students[studentId] == account, "unauthorized student ID");
             _mileageToken.burnFrom(account, amount);
         }
         emit MileageBurned(studentId, account, msg.sender, amount);
