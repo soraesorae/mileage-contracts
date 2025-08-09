@@ -49,7 +49,7 @@ for CHAIN_DIR in broadcast/$SCRIPT_FILE_NAME/*/; do
       --arg token_deploy "$TOKEN_DEPLOY" \
       --arg manager_proxy "$MANAGER_PROXY" \
       --arg manager_factory "$MANAGER_FACTORY" \
-      --arg token_impl "$TOKEN_DEPLOY" \
+      --arg token_impl "$TOKEN_IMPL" \
       --arg manager_impl "$MANAGER_IMPL" \
       '{
         "SwMileageToken": $token_deploy,
