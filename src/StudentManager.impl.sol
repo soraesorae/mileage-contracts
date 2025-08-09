@@ -4,11 +4,12 @@ pragma solidity ^0.8.13;
 import {ISwMileageToken} from "./ISwMileageToken.sol";
 import {SwMileageTokenImpl} from "./SwMileageToken.impl.sol";
 import {IStudentManager} from "./IStudentManager.sol";
+import {SwMileageTokenFactory} from "./SwMileageFactory.sol";
 import {Admin} from "./Admin.sol";
 import {Initializable} from "kaia-contracts/contracts/proxy/utils/Initializable.sol";
 import {Pausable} from "kaia-contracts/contracts/security/Pausable.sol";
 
-contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
+contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFactory, Admin, Pausable {
     mapping(bytes32 => address) public students;
     mapping(address => bytes32) public studentByAddr;
     mapping(uint256 => DocumentSubmission) public docSubmissions;
@@ -20,15 +21,14 @@ contract StudentManagerImpl is IStudentManager, Initializable, Admin, Pausable {
 
     SwMileageTokenImpl public _mileageToken;
 
-    constructor(
-        address mileageToken_
-    ) {
+    constructor(address mileageToken_, address tokenImpl) SwMileageTokenFactory(tokenImpl) {
         _mileageToken = SwMileageTokenImpl(mileageToken_);
     }
 
-    function initialize(address mileageToken_, address admin) external initializer {
+    function initialize(address mileageToken_, address tokenImpl, address admin) external initializer {
         _mileageToken = SwMileageTokenImpl(mileageToken_);
         _addAdmin(admin);
+        setImplementation(tokenImpl);
     }
 
     function changeMileageToken(

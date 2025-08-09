@@ -28,7 +28,7 @@ contract SwMileageTokenFactory {
 
     function setImplementation(
         address impl
-    ) external {
+    ) public {
         _implementation = impl;
     }
 

@@ -16,6 +16,7 @@ contract StudentManagerFactoryTest is Test {
     StudentManagerFactory public factory;
     SwMileageTokenImpl public mileageToken;
     SwMileageTokenFactory public tokenFactory;
+    SwMileageTokenImpl tokenImpl;
 
     address alice = makeAddr("alice");
 
@@ -24,14 +25,15 @@ contract StudentManagerFactoryTest is Test {
 
         mileageToken = new SwMileageTokenImpl("TokenAlice", "TALI");
 
-        impl = new StudentManagerImpl(address(mileageToken));
-        factory = new StudentManagerFactory(address(impl));
-        SwMileageTokenImpl tokenImpl = new SwMileageTokenImpl("TokenBobImpl", "TBOB");
+        tokenImpl = new SwMileageTokenImpl("TokenBobImpl", "TBOB");
         tokenFactory = new SwMileageTokenFactory(address(tokenImpl));
+
+        impl = new StudentManagerImpl(address(mileageToken), address(tokenImpl));
+        factory = new StudentManagerFactory(address(impl));
     }
 
     function test_deploy() public {
-        StudentManagerImpl deployed = StudentManagerImpl(factory.deploy(address(mileageToken)));
+        StudentManagerImpl deployed = StudentManagerImpl(factory.deploy(address(mileageToken), address(tokenImpl)));
         assertEq(deployed.mileageToken(), address(mileageToken));
         assertTrue(deployed.isAdmin(alice));
 
@@ -40,14 +42,13 @@ contract StudentManagerFactoryTest is Test {
         assertEq(deployed.mileageToken(), address(next));
     }
 
-    // test emit event with predicted address
-
     function test_deploy_tokenFactory() public {
         SwMileageTokenImpl deployedToken = SwMileageTokenImpl(tokenFactory.deploy("TokenAlpha", "TALP"));
         assertEq(deployedToken.name(), "TokenAlpha");
         assertEq(deployedToken.symbol(), "TALP");
 
-        StudentManagerImpl deployedManager = StudentManagerImpl(factory.deploy(address(deployedToken)));
+        StudentManagerImpl deployedManager =
+            StudentManagerImpl(factory.deploy(address(deployedToken), address(tokenImpl)));
         address bob = makeAddr("bob");
         deployedManager.addAdmin(bob);
 

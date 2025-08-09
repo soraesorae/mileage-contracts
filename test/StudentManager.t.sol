@@ -9,9 +9,7 @@ import {IStudentManager} from "../src/IStudentManager.sol";
 import {ISwMileageToken} from "../src/ISwMileageToken.sol";
 
 contract MockStudentManager is StudentManagerImpl {
-    constructor(
-        address token
-    ) StudentManagerImpl(token) {}
+    constructor(address token, address tokenImpl) StudentManagerImpl(token, tokenImpl) {}
 
     function changeDocStatus(uint256 index, IStudentManager.SubmissionStatus status) external {
         docSubmissions[index].status = status;
@@ -21,6 +19,7 @@ contract MockStudentManager is StudentManagerImpl {
 contract StudentManagerTest is Test {
     SwMileageTokenImpl public token;
     MockStudentManager public manager;
+    SwMileageTokenImpl public tokenImpl;
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
     address charlie = makeAddr("charlie");
@@ -28,7 +27,8 @@ contract StudentManagerTest is Test {
     function setUp() public {
         vm.startPrank(alice);
         token = new SwMileageTokenImpl("", "");
-        manager = new MockStudentManager(address(token));
+        tokenImpl = new SwMileageTokenImpl("", "");
+        manager = new MockStudentManager(address(token), address(tokenImpl));
 
         token.addAdmin(address(manager));
 
@@ -812,5 +812,18 @@ contract StudentManagerTest is Test {
 
         vm.prank(alice);
         manager.changeAccount(studentId, recovery);
+    }
+
+    function test_deploy_token() public {
+        manager.setImplementation(address(tokenImpl));
+        string memory name = "Test Token";
+        string memory symbol = "TT";
+        vm.prank(alice);
+        address deployed = manager.deploy(name, symbol);
+
+        assert(deployed != address(0));
+        assertEq(SwMileageTokenImpl(deployed).name(), name);
+        assertEq(SwMileageTokenImpl(deployed).symbol(), symbol);
+        assertEq(SwMileageTokenImpl(deployed).isAdmin(alice), true);
     }
 }

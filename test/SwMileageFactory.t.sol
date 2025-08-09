@@ -46,9 +46,9 @@ contract SwMileageFactoryTest is Test {
 
     function test_deployWithAdmin_studentManager() public {
         vm.startPrank(alice);
-        StudentManagerImpl studentManagerImpl = new StudentManagerImpl(address(0));
+        StudentManagerImpl studentManagerImpl = new StudentManagerImpl(address(0), address(0));
         StudentManagerFactory studentManagerFactory = new StudentManagerFactory(address(studentManagerImpl));
-        StudentManagerImpl dummyManager = StudentManagerImpl(studentManagerFactory.deploy(address(0)));
+        StudentManagerImpl dummyManager = StudentManagerImpl(studentManagerFactory.deploy(address(0), address(0)));
         vm.stopPrank();
 
         vm.prank(alice);

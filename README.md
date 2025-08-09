@@ -55,7 +55,7 @@ RPC_URL=http://127.0.0.1:8545
 ### Deploy
 
 ```shell
-./deploy.sh
+./deploy-contracts.sh
 ls artifacts/ | grep "deploy.json"
 ```
 

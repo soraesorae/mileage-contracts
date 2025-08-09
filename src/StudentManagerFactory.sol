@@ -5,7 +5,7 @@ import {Clones} from "openzeppelin-contracts/contracts/proxy/Clones.sol";
 import {IAdmin} from "./IAdmin.sol";
 
 interface IStudentManagerImpl is IAdmin {
-    function initialize(address _mileageToken, address admin) external;
+    function initialize(address _mileageToken, address implementation, address admin) external;
 }
 
 contract StudentManagerFactory {
@@ -31,11 +31,9 @@ contract StudentManagerFactory {
         _implementation = impl;
     }
 
-    function deploy(
-        address mileageToken
-    ) external returns (address) {
+    function deploy(address mileageToken, address tokenImplementation) external returns (address) {
         address clone = _implementation.clone();
-        IStudentManagerImpl(clone).initialize(mileageToken, msg.sender);
+        IStudentManagerImpl(clone).initialize(mileageToken, tokenImplementation, msg.sender);
         emit StudentManagerCreated(clone);
         return address(clone);
     }
