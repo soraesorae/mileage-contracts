@@ -8,6 +8,10 @@ import {StudentManagerImpl} from "../src/StudentManager.impl.sol";
 import {IStudentManager} from "../src/IStudentManager.sol";
 import {ISwMileageToken} from "../src/ISwMileageToken.sol";
 
+interface IStudentManagerFactory {
+    event MileageTokenCreated(address indexed tokenAddress);
+}
+
 contract MockStudentManager is StudentManagerImpl {
     constructor(address token, address tokenImpl) StudentManagerImpl(token, tokenImpl) {}
 
@@ -819,11 +823,23 @@ contract StudentManagerTest is Test {
         string memory name = "Test Token";
         string memory symbol = "TT";
         vm.prank(alice);
-        address deployed = manager.deploy(name, symbol);
+        vm.expectEmit(false, false, false, false, address(manager));
+        emit IStudentManagerFactory.MileageTokenCreated(address(0));
+        address deployed = manager.deployWithAdmin(name, symbol, address(manager));
 
         assert(deployed != address(0));
         assertEq(SwMileageTokenImpl(deployed).name(), name);
         assertEq(SwMileageTokenImpl(deployed).symbol(), symbol);
-        assertEq(SwMileageTokenImpl(deployed).isAdmin(alice), true);
+        assertEq(SwMileageTokenImpl(deployed).isAdmin(address(manager)), true);
+
+        vm.prank(alice);
+        manager.changeMileageToken(deployed);
+        _registerStudent(keccak256(abi.encode("studentId", "123456789")), bob);
+
+        vm.prank(bob);
+        manager.submitDocument(keccak256("docHash"));
+
+        vm.prank(alice);
+        manager.approveDocument(0, 100, keccak256("reasonHash"));
     }
 }
