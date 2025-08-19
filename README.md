@@ -38,18 +38,24 @@ ls artifacts/ | grep ".bytecode.txt"
 
 ### Setup
 
-#### use anvil local testnet
+#### using anvil local testnet
 
 ```shell
 anvil
 ```
 
-#### use remote http json rpc
-
 ```shell
 # .env file
 DEPLOYER_PRIVATE_KEY=0x1234...
 RPC_URL=http://127.0.0.1:8545
+```
+
+#### using remote http json rpc
+
+```shell
+# .env file
+DEPLOYER_PRIVATE_KEY=0x1234...
+RPC_URL=<REMOTE HTTP RPC URL>
 ```
 
 ### Deploy
@@ -62,7 +68,5 @@ ls artifacts/ | grep "deploy.json"
 Also, you can deploy with `forge script`, but it doesn't generate `artifacts/deploy.json`.
 
 ```shell
-forge script script/SwMileageDeploy.s.sol --broadcast --skip-simulation --gas-estimate-multiplier 500
+forge script script/SwMileageDeploy.s.sol --broadcast --skip-simulation
 ```
-
-In our case, forge underestimates gas used of `deploy(...)` function in a certain chain. Therefore, use temporarily `--gas-estimate-multiplier 500` to overestimate gas used.
