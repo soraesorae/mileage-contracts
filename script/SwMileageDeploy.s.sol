@@ -28,16 +28,16 @@ contract SwMileageDeployScript is Script {
         console.log("SwMileageToken logic contract deployed to: ", address(tokenImpl));
         console.log("SwMileageToken deployed to: ", address(deployedToken));
 
-        StudentManagerImpl studentManagerImpl = new StudentManagerImpl(address(0), address(0));
-        StudentManagerFactory managerFactory = new StudentManagerFactory(address(studentManagerImpl));
+        // StudentManagerImpl studentManagerImpl = new StudentManagerImpl(address(0), address(0));
+        // StudentManagerFactory managerFactory = new StudentManagerFactory(address(studentManagerImpl));
 
-        StudentManagerImpl deployedManager =
-            StudentManagerImpl(managerFactory.deploy(address(deployedToken), address(tokenImpl)));
+        // StudentManagerImpl deployedManager =
+        //     StudentManagerImpl(managerFactory.deploy(address(deployedToken), address(tokenImpl)));
+
+        StudentManagerImpl deployedManager = new StudentManagerImpl(address(deployedToken), address(tokenImpl));
 
         deployedToken.addAdmin(address(deployedManager));
 
-        console.log("StudentManagerFactory deployed to: ", address(managerFactory));
-        console.log("StudentManager logic contract deployed to: ", address(studentManagerImpl));
         console.log("StudentManager deployed to: ", address(deployedManager));
 
         // address newToken = deployedManager.deployWithAdmin("SMT", "SMT", address(deployedManager));
