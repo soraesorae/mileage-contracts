@@ -21,42 +21,26 @@ for CHAIN_DIR in broadcast/$SCRIPT_FILE_NAME/*/; do
   if [ -n "$LATEST_RUN" ]; then
     echo "chain ID: $CHAIN_ID"
     
-    # TOKEN_FACTORY_INDEX=$(jq '.transactions | map(.contractName == "SwMileageTokenFactory" and .transactionType == "CREATE") | index(true)' $LATEST_RUN)
-    MANAGER_FACTORY_INDEX=$(jq '.transactions | map(.contractName == "StudentManagerFactory" and .transactionType == "CREATE") | index(true)' $LATEST_RUN)
     TOKEN_IMPL_INDEX=$(jq '.transactions | map(.contractName == "SwMileageTokenImpl" and .transactionType == "CREATE") | indices(true)[0]' $LATEST_RUN)
     TOKEN_DEPLOY_INDEX=$(jq '.transactions | map(.contractName == "SwMileageTokenImpl" and .transactionType == "CREATE") | indices(true)[1]' $LATEST_RUN)
-    MANAGER_IMPL_INDEX=$(jq '.transactions | map(.contractName == "StudentManagerImpl" and .transactionType == "CREATE") | index(true)' $LATEST_RUN)
+    STUDENT_MANAGER_INDEX=$(jq '.transactions | map(.contractName == "StudentManagerImpl" and .transactionType == "CREATE") | index(true)' $LATEST_RUN)
     
-    # TOKEN_DEPLOY_INDEX=$(jq '.transactions | map(.contractName == "SwMileageTokenFactory" and .function == "deploy(string,string)") | index(true)' $LATEST_RUN)
-    MANAGER_DEPLOY_INDEX=$(jq '.transactions | map(.contractName == "StudentManagerFactory" and .function == "deploy(address,address)") | index(true)' $LATEST_RUN)
-    
-    # TOKEN_FACTORY=$(jq -r ".transactions[$TOKEN_FACTORY_INDEX].contractAddress" $LATEST_RUN)
-    MANAGER_FACTORY=$(jq -r ".transactions[$MANAGER_FACTORY_INDEX].contractAddress" $LATEST_RUN)
     TOKEN_IMPL=$(jq -r ".transactions[$TOKEN_IMPL_INDEX].contractAddress" $LATEST_RUN)
-    MANAGER_IMPL=$(jq -r ".transactions[$MANAGER_IMPL_INDEX].contractAddress" $LATEST_RUN)
+    TOKEN_DEPLOY=$(jq -r ".receipts[$TOKEN_DEPLOY_INDEX].contractAddress" $LATEST_RUN)
+    STUDENT_MANAGER_DEPLOY=$(jq -r ".transactions[$STUDENT_MANAGER_INDEX].contractAddress" $LATEST_RUN)
     
-    TOKEN_DEPLOY=$(jq -r ".receipts[$TOKEN_DEPLOY_INDEX].logs[0].address" $LATEST_RUN)
-    MANAGER_PROXY=$(jq -r ".receipts[$MANAGER_DEPLOY_INDEX].logs[0].address" $LATEST_RUN)
-    
-    # echo "SwMileageTokenFactory: $TOKEN_FACTORY"
-    echo "StudentManagerFactory: $MANAGER_FACTORY"
     echo "SwMileageTokenImpl (logic contract): $TOKEN_IMPL"
-    echo "StudentManagerImpl (logic contract): $MANAGER_IMPL"
     echo "SwMileageToken: $TOKEN_DEPLOY"
-    echo "StudentManager (proxy contract): $MANAGER_PROXY"
+    echo "StudentManager: $STUDENT_MANAGER_DEPLOY"
     
     ALL_CONTRACTS=$(jq -n \
-      --arg token_deploy "$TOKEN_DEPLOY" \
-      --arg manager_proxy "$MANAGER_PROXY" \
-      --arg manager_factory "$MANAGER_FACTORY" \
       --arg token_impl "$TOKEN_IMPL" \
-      --arg manager_impl "$MANAGER_IMPL" \
+      --arg token_deploy "$TOKEN_DEPLOY" \
+      --arg manager_deploy "$STUDENT_MANAGER_DEPLOY" \
       '{
-        "SwMileageToken": $token_deploy,
-        "StudentManager": $manager_proxy,
-        "StudentManagerFactory": $manager_factory,
         "SwMileageTokenImpl": $token_impl,
-        "StudentManagerImpl": $manager_impl
+        "SwMileageToken": $token_deploy,
+        "StudentManager": $manager_deploy,
       }')
     
     CONTRACTS_JSON=$(echo $CONTRACTS_JSON | \
