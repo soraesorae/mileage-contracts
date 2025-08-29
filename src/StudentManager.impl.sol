@@ -106,6 +106,26 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
         emit AccountChanged(studentId, currentAccount, targetAccount);
     }
 
+    function changeStudentId(
+        bytes32 nextId
+    ) external whenNotPaused {
+        require(nextId != bytes32(0), "empty new student ID");
+
+        bytes32 currentId = _validateAccount();
+        require(currentId != nextId, "student IDs must be different");
+        require(students[nextId] == address(0), "new student ID already exists");
+
+        if (pendingAccountChanges[currentId].targetAccount != address(0)) {
+            delete pendingAccountChanges[currentId];
+        }
+
+        delete students[currentId];
+        students[nextId] = msg.sender;
+        studentByAddr[msg.sender] = nextId;
+
+        emit StudentIdChanged(currentId, nextId, msg.sender);
+    }
+
     function getPendingAccountChange(
         bytes32 studentId
     ) external view returns (AccountChangeProposal memory) {
@@ -230,6 +250,25 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
             _mileageToken.transferFrom(currentAccount, targetAccount, balance);
         }
         emit AccountChanged(studentId, currentAccount, targetAccount);
+    }
+
+    function migrateStudentId(bytes32 currentId, bytes32 nextId) external onlyAdmin {
+        require(currentId != bytes32(0) && nextId != bytes32(0), "empty student ID");
+        require(currentId != nextId, "student IDs must be different");
+
+        address account = students[currentId];
+        require(account != address(0), "student ID not registered");
+        require(students[nextId] == address(0), "next student ID already exists");
+
+        if (pendingAccountChanges[currentId].targetAccount != address(0)) {
+            delete pendingAccountChanges[currentId];
+        }
+
+        delete students[currentId];
+        students[nextId] = account;
+        studentByAddr[account] = nextId;
+
+        emit StudentIdChanged(currentId, nextId, account);
     }
 
     // Imediately update student record

@@ -842,4 +842,340 @@ contract StudentManagerTest is Test {
         vm.prank(alice);
         manager.approveDocument(0, 100, keccak256("reasonHash"));
     }
+
+    ////////////////////////// changeStudentId tests
+
+    function test_changeStudentId_success() public {
+        bytes32 oldStudentId = keccak256(abi.encode("oldStudentId", "123"));
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+
+        _registerStudent(oldStudentId, bob);
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.StudentIdChanged(oldStudentId, newStudentId, bob);
+
+        vm.prank(bob);
+        manager.changeStudentId(newStudentId);
+
+        assertEq(manager.students(newStudentId), bob);
+        assertEq(manager.studentByAddr(bob), newStudentId);
+        assertEq(manager.students(oldStudentId), address(0));
+    }
+
+    function test_changeStudentId_withPendingChange() public {
+        bytes32 oldStudentId = keccak256(abi.encode("oldStudentId", "123"));
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+        address targetAccount = makeAddr("target");
+
+        _registerStudent(oldStudentId, bob);
+
+        vm.prank(bob);
+        manager.proposeAccountChange(targetAccount);
+
+        assertEq(manager.getPendingAccountChangeTarget(oldStudentId), targetAccount);
+
+        vm.prank(bob);
+        manager.changeStudentId(newStudentId);
+
+        assertEq(manager.getPendingAccountChangeTarget(newStudentId), address(0));
+        assertEq(manager.getPendingAccountChangeTarget(oldStudentId), address(0));
+    }
+
+    function test_changeStudentId_emptyId() public {
+        bytes32 oldStudentId = keccak256(abi.encode("oldStudentId", "123"));
+
+        _registerStudent(oldStudentId, bob);
+
+        vm.expectRevert("empty new student ID");
+        vm.prank(bob);
+        manager.changeStudentId(bytes32(0));
+    }
+
+    function test_changeStudentId_sameId() public {
+        bytes32 studentId = keccak256(abi.encode("studentId", "123"));
+
+        _registerStudent(studentId, bob);
+
+        vm.expectRevert("student IDs must be different");
+        vm.prank(bob);
+        manager.changeStudentId(studentId);
+    }
+
+    function test_changeStudentId_existingId() public {
+        bytes32 studentId1 = keccak256(abi.encode("student1", "123"));
+        bytes32 studentId2 = keccak256(abi.encode("student2", "456"));
+
+        _registerStudent(studentId1, bob);
+        _registerStudent(studentId2, charlie);
+
+        vm.expectRevert("new student ID already exists");
+        vm.prank(bob);
+        manager.changeStudentId(studentId2);
+    }
+
+    function test_changeStudentId_unregistered() public {
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+
+        vm.expectRevert("unregistered address");
+        vm.prank(bob);
+        manager.changeStudentId(newStudentId);
+    }
+
+    function test_changeStudentId_unauthorized() public {
+        bytes32 studentId = keccak256(abi.encode("studentId", "123"));
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+
+        _registerStudent(studentId, bob);
+
+        vm.prank(alice);
+        manager.changeAccount(studentId, charlie);
+
+        vm.expectRevert("unauthorized student ID");
+        vm.prank(bob);
+        manager.changeStudentId(newStudentId);
+    }
+
+    ////////////////////////// migrateStudentId tests
+
+    function test_migrateStudentId_success() public {
+        bytes32 oldStudentId = keccak256(abi.encode("oldStudentId", "123"));
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+
+        _registerStudent(oldStudentId, bob);
+
+        vm.expectEmit(address(manager));
+        emit IStudentManager.StudentIdChanged(oldStudentId, newStudentId, bob);
+
+        vm.prank(alice);
+        manager.migrateStudentId(oldStudentId, newStudentId);
+
+        assertEq(manager.students(newStudentId), bob);
+        assertEq(manager.studentByAddr(bob), newStudentId);
+        assertEq(manager.students(oldStudentId), address(0));
+    }
+
+    function test_migrateStudentId_withPendingChange() public {
+        bytes32 oldStudentId = keccak256(abi.encode("oldStudentId", "123"));
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+        address targetAccount = makeAddr("target");
+
+        _registerStudent(oldStudentId, bob);
+
+        vm.prank(bob);
+        manager.proposeAccountChange(targetAccount);
+
+        vm.prank(alice);
+        manager.migrateStudentId(oldStudentId, newStudentId);
+
+        assertEq(manager.getPendingAccountChangeTarget(newStudentId), address(0));
+        assertEq(manager.getPendingAccountChangeTarget(oldStudentId), address(0));
+    }
+
+    function test_migrateStudentId_emptyCurrentId() public {
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+
+        vm.expectRevert("empty student ID");
+        vm.prank(alice);
+        manager.migrateStudentId(bytes32(0), newStudentId);
+    }
+
+    function test_migrateStudentId_emptyNextId() public {
+        bytes32 oldStudentId = keccak256(abi.encode("oldStudentId", "123"));
+
+        vm.expectRevert("empty student ID");
+        vm.prank(alice);
+        manager.migrateStudentId(oldStudentId, bytes32(0));
+    }
+
+    function test_migrateStudentId_sameIds() public {
+        bytes32 studentId = keccak256(abi.encode("studentId", "123"));
+
+        vm.expectRevert("student IDs must be different");
+        vm.prank(alice);
+        manager.migrateStudentId(studentId, studentId);
+    }
+
+    function test_migrateStudentId_nonexistentCurrent() public {
+        bytes32 oldStudentId = keccak256(abi.encode("oldStudentId", "123"));
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+
+        vm.expectRevert("student ID not registered");
+        vm.prank(alice);
+        manager.migrateStudentId(oldStudentId, newStudentId);
+    }
+
+    function test_migrateStudentId_existingNext() public {
+        bytes32 studentId1 = keccak256(abi.encode("student1", "123"));
+        bytes32 studentId2 = keccak256(abi.encode("student2", "456"));
+
+        _registerStudent(studentId1, bob);
+        _registerStudent(studentId2, charlie);
+
+        vm.expectRevert("next student ID already exists");
+        vm.prank(alice);
+        manager.migrateStudentId(studentId1, studentId2);
+    }
+
+    function test_migrateStudentId_notAdmin() public {
+        bytes32 oldStudentId = keccak256(abi.encode("oldStudentId", "123"));
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+
+        _registerStudent(oldStudentId, bob);
+
+        vm.expectRevert("caller is not the admin");
+        vm.prank(bob);
+        manager.migrateStudentId(oldStudentId, newStudentId);
+    }
+
+    ////////////////////////// integration tests
+
+    function test_studentId_afterChange_docSubmission() public {
+        bytes32 oldStudentId = keccak256(abi.encode("oldStudentId", "123"));
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+        bytes32 docHash = keccak256("test document");
+
+        _registerStudent(oldStudentId, bob);
+
+        vm.prank(bob);
+        manager.changeStudentId(newStudentId);
+
+        vm.prank(bob);
+        uint256 docIndex = manager.submitDocument(docHash);
+
+        IStudentManager.DocumentSubmission memory doc = manager.getDocSubmission(docIndex);
+        assertEq(doc.studentId, newStudentId);
+    }
+
+    function test_studentId_afterMigration_token() public {
+        bytes32 oldStudentId = keccak256(abi.encode("oldStudentId", "123"));
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+
+        _registerStudent(oldStudentId, bob);
+
+        vm.prank(alice);
+        manager.mint(oldStudentId, address(0), 100);
+
+        vm.prank(alice);
+        manager.migrateStudentId(oldStudentId, newStudentId);
+
+        vm.prank(alice);
+        manager.mint(newStudentId, address(0), 50);
+
+        assertEq(token.balanceOf(bob), 150);
+    }
+
+    function test_studentId_sequential() public {
+        bytes32 id1 = keccak256(abi.encode("id1", "111"));
+        bytes32 id2 = keccak256(abi.encode("id2", "222"));
+        bytes32 id3 = keccak256(abi.encode("id3", "333"));
+
+        _registerStudent(id1, bob);
+
+        vm.prank(bob);
+        manager.changeStudentId(id2);
+
+        vm.prank(bob);
+        manager.changeStudentId(id3);
+
+        assertEq(manager.students(id3), bob);
+        assertEq(manager.studentByAddr(bob), id3);
+        assertEq(manager.students(id1), address(0));
+        assertEq(manager.students(id2), address(0));
+
+        _registerStudent(id1, charlie);
+        assertEq(manager.students(id1), charlie);
+    }
+
+    function test_studentId_withAccountChange() public {
+        bytes32 studentId = keccak256(abi.encode("studentId", "123"));
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+        address newAccount = makeAddr("newAccount");
+
+        _registerStudent(studentId, bob);
+
+        vm.prank(alice);
+        manager.changeAccount(studentId, newAccount);
+
+        vm.prank(newAccount);
+        manager.changeStudentId(newStudentId);
+
+        assertEq(manager.students(newStudentId), newAccount);
+        assertEq(manager.studentByAddr(newAccount), newStudentId);
+        assertEq(manager.students(studentId), address(0));
+
+        vm.expectRevert("unauthorized student ID");
+        vm.prank(bob);
+        manager.changeStudentId(keccak256(abi.encode("another", "789")));
+    }
+
+    function test_studentId_token() public {
+        bytes32 studentId1 = keccak256(abi.encode("student1", "111"));
+        bytes32 studentId2 = keccak256(abi.encode("student2", "222"));
+        address account1 = makeAddr("account1");
+        address account2 = makeAddr("account2");
+
+        _registerStudent(studentId1, bob);
+
+        vm.prank(alice);
+        manager.mint(studentId1, address(0), 100);
+
+        vm.prank(alice);
+        manager.changeAccount(studentId1, account1);
+
+        vm.prank(account1);
+        manager.changeStudentId(studentId2);
+
+        vm.prank(alice);
+        manager.changeAccount(studentId2, account2);
+
+        assertEq(token.balanceOf(bob), 0);
+        assertEq(token.balanceOf(account1), 0);
+        assertEq(token.balanceOf(account2), 100);
+        assertEq(manager.students(studentId2), account2);
+        assertEq(manager.studentByAddr(account2), studentId2);
+    }
+
+    function test_studentId_pendingChangeCleanup() public {
+        bytes32 oldStudentId = keccak256(abi.encode("oldStudentId", "123"));
+        bytes32 newStudentId = keccak256(abi.encode("newStudentId", "456"));
+        address proposedAccount = makeAddr("proposedAccount");
+
+        _registerStudent(oldStudentId, bob);
+
+        vm.prank(bob);
+        manager.proposeAccountChange(proposedAccount);
+
+        vm.prank(alice);
+        manager.migrateStudentId(oldStudentId, newStudentId);
+
+        vm.expectRevert("no pending account change");
+        vm.prank(proposedAccount);
+        manager.confirmAccountChange(oldStudentId);
+
+        vm.expectRevert("no pending account change");
+        vm.prank(proposedAccount);
+        manager.confirmAccountChange(newStudentId);
+
+        assertEq(manager.students(newStudentId), bob);
+        assertEq(manager.studentByAddr(bob), newStudentId);
+    }
+
+    function test_studentId_conflictingProposals() public {
+        bytes32 studentId1 = keccak256(abi.encode("student1", "111"));
+        bytes32 studentId2 = keccak256(abi.encode("student2", "222"));
+        address targetAccount = makeAddr("targetAccount");
+
+        _registerStudent(studentId1, bob);
+        _registerStudent(studentId2, charlie);
+
+        vm.prank(bob);
+        manager.proposeAccountChange(targetAccount);
+
+        vm.prank(alice);
+        manager.changeAccount(studentId2, targetAccount);
+
+        vm.expectRevert("target address already registered");
+        vm.prank(targetAccount);
+        manager.confirmAccountChange(studentId1);
+    }
 }
