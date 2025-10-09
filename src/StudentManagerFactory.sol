@@ -2,9 +2,8 @@
 pragma solidity ^0.8.13;
 
 import {Clones} from "openzeppelin-contracts/contracts/proxy/Clones.sol";
-import {IAdmin} from "./IAdmin.sol";
 
-interface IStudentManagerImpl is IAdmin {
+interface IStudentManagerImpl {
     function initialize(address _mileageToken, address implementation, address admin) external;
 }
 

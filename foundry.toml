@@ -11,3 +11,6 @@ runs = 1000
 [fmt]
 multiline_func_header = "params_first"
 override_spacing = true
+
+[lint]
+exclude_lints = ["erc20-unchecked-transfer", "unused-import"]

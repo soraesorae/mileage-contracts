@@ -2,12 +2,11 @@
 pragma solidity ^0.8.13;
 
 import {Test, console} from "forge-std/Test.sol";
-import {SortedList} from "../src/SortedList.sol";
 import {ISortedList} from "../src/ISortedList.sol";
-import {MockSortedList} from "./MockSortedList.sol";
+import {SortedListHarness} from "./SortedListHarness.sol";
 
 contract SortedListTest is Test {
-    MockSortedList list;
+    SortedListHarness list;
 
     address alice = makeAddr("alice");
     address bob = makeAddr("bob");
@@ -16,7 +15,7 @@ contract SortedListTest is Test {
     address eve = makeAddr("eve");
 
     function setUp() public {
-        list = new MockSortedList();
+        list = new SortedListHarness();
     }
 
     function test_getListLength_empty() public view {

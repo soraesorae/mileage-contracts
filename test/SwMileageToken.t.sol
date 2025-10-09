@@ -5,7 +5,6 @@ import {Test, console} from "forge-std/Test.sol";
 import {IKIP7} from "kaia-contracts/contracts/KIP/token/KIP7/IKIP7.sol";
 import {ISwMileageToken} from "../src/ISwMileageToken.sol";
 import {SwMileageTokenImpl} from "../src/SwMileageToken.impl.sol";
-import {SortedList} from "../src/SortedList.sol";
 import {ISortedList} from "../src/ISortedList.sol";
 
 contract SwMileageTokenTest is Test {

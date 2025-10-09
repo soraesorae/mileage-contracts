@@ -4,7 +4,7 @@ pragma solidity ^0.8.13;
 import {SortedList} from "../src/SortedList.sol";
 import {ISortedList} from "../src/ISortedList.sol";
 
-contract MockSortedList is SortedList {
+contract SortedListHarness is SortedList {
     function update(address addr, uint256 value) public {
         _updateElement(addr, value);
     }

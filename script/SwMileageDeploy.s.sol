@@ -2,8 +2,6 @@
 pragma solidity ^0.8.13;
 
 import {Script, console} from "forge-std/Script.sol";
-import {SwMileageTokenFactory} from "../src/SwMileageFactory.sol";
-import {StudentManagerFactory} from "../src/StudentManagerFactory.sol";
 import {SwMileageTokenImpl} from "../src/SwMileageToken.impl.sol";
 import {StudentManagerImpl} from "../src/StudentManager.impl.sol";
 
