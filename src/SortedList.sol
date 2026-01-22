@@ -30,7 +30,6 @@ abstract contract SortedList is ISortedList {
         return _participated[addr];
     }
 
-
     function _getElementRange(uint256 from, uint256 to) internal view virtual returns (bytes memory) {
         if (from == 0) revert InvalidRangeFrom();
         if (from > to) revert InvalidRangeTo(from, to);

@@ -100,7 +100,7 @@ contract SwMileageTokenImpl is KIP7Burnable, Initializable, Admin, SortedList, I
             _updateElement(to, balanceOf(to));
             return;
         }
-        
+
         if (to == address(0)) {
             // burn
             _updateOrRemove(from, balanceOf(from));

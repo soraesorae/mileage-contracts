@@ -8,6 +8,7 @@ interface ISwMileageToken is IKIP7, IKIP7Burnable {
     error BurnNotAllowed();
     error ApprovalNotAllowed();
     error AdminOnlyOperation();
+
     struct Student {
         address account;
         uint256 balance;
