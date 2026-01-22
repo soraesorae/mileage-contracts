@@ -6,6 +6,7 @@ interface ISortedList {
     error InvalidRangeTo(uint256 from, uint256 to);
     error AddressNotInList(address target);
     error ListIsEmpty();
+
     struct Node {
         address next;
         uint256 value;
