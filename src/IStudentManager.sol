@@ -2,6 +2,24 @@
 pragma solidity ^0.8.13;
 
 interface IStudentManager {
+    error EmptyStudentId();
+    error StudentIdInUse(bytes32 studentId);
+    error AddressInUse();
+    error AddressNotRegistered();
+    error StudentIdNotRegistered();
+    error StudentIdMismatch(bytes32 expected, address actual);
+    error StudentNotRegistered();
+
+    error InvalidTargetAccount();
+    error TargetInUse();
+    error NoPendingChange();
+    error UnauthorizedConfirmation();
+
+    error SameStudentId();
+
+    error InvalidDocIndex(uint256 provided, uint256 max);
+    error NotPendingDocument();
+
     struct DocumentSubmission {
         bytes32 studentId;
         bytes32 docHash;

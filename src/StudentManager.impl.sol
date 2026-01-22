@@ -54,9 +54,9 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
     function registerStudent(
         bytes32 studentId
     ) external whenNotPaused {
-        require(studentId != bytes32(0), "empty student ID");
-        require(students[studentId] == address(0), "student ID already registered");
-        require(studentByAddr[msg.sender] == bytes32(0), "address already registered");
+        if (studentId == bytes32(0)) revert EmptyStudentId();
+        if (students[studentId] != address(0)) revert StudentIdInUse(studentId);
+        if (studentByAddr[msg.sender] != bytes32(0)) revert AddressInUse();
         students[studentId] = msg.sender;
         studentByAddr[msg.sender] = studentId;
         emit StudentRegistered(studentId, msg.sender);
@@ -65,9 +65,9 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
     function proposeAccountChange(
         address targetAccount
     ) external whenNotPaused {
-        require(targetAccount != address(0) && targetAccount != msg.sender, "invalid target account");
+        if (targetAccount == address(0) || targetAccount == msg.sender) revert InvalidTargetAccount();
         bytes32 studentId = _validateAccount();
-        require(studentByAddr[targetAccount] == bytes32(0), "target address already registered");
+        if (studentByAddr[targetAccount] != bytes32(0)) revert TargetInUse();
 
         pendingAccountChanges[studentId] =
             AccountChangeProposal({targetAccount: targetAccount, createdAt: block.timestamp});
@@ -83,9 +83,9 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
         uint256 balance = 0;
         bool isParticipated = false;
 
-        require(targetAccount != address(0), "no pending account change");
-        require(targetAccount == msg.sender, "confirmation must be from target account");
-        require(studentByAddr[targetAccount] == bytes32(0), "target address already registered");
+        if (targetAccount == address(0)) revert NoPendingChange();
+        if (targetAccount != msg.sender) revert UnauthorizedConfirmation();
+        if (studentByAddr[targetAccount] != bytes32(0)) revert TargetInUse();
 
         if (_mileageToken.participated(currentAccount)) {
             isParticipated = true;
@@ -108,11 +108,11 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
     function changeStudentId(
         bytes32 nextId
     ) external whenNotPaused {
-        require(nextId != bytes32(0), "empty new student ID");
+        if (nextId == bytes32(0)) revert EmptyStudentId();
 
         bytes32 currentId = _validateAccount();
-        require(currentId != nextId, "student IDs must be different");
-        require(students[nextId] == address(0), "new student ID already exists");
+        if (currentId == nextId) revert SameStudentId();
+        if (students[nextId] != address(0)) revert StudentIdInUse(nextId);
 
         if (pendingAccountChanges[currentId].targetAccount != address(0)) {
             delete pendingAccountChanges[currentId];
@@ -163,9 +163,9 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
     }
 
     function approveDocument(uint256 documentIndex, uint256 amount, bytes32 reasonHash) external onlyAdmin {
-        require(documentIndex < documentsCount, "document index out of range");
+        if (documentIndex >= documentsCount) revert InvalidDocIndex(documentIndex, documentsCount);
         DocumentSubmission storage document = docSubmissions[documentIndex];
-        require(document.status == SubmissionStatus.Pending, "document not pending");
+        if (document.status != SubmissionStatus.Pending) revert NotPendingDocument();
 
         if (amount == 0) {
             _rejectDocument(documentIndex, reasonHash);
@@ -201,12 +201,12 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
         // is valid account, studentId?
         if (account == address(0)) {
             account = students[studentId];
-            require(account != address(0), "student not registered");
+            if (account == address(0)) revert StudentIdNotRegistered();
             _mileageToken.mint(account, amount);
         } else {
             studentId = studentByAddr[account];
-            require(studentId != bytes32(0), "unregistered address");
-            require(students[studentId] == account, "unauthorized student ID");
+            if (studentId == bytes32(0)) revert AddressNotRegistered();
+            if (students[studentId] != account) revert StudentIdMismatch(studentId, account);
             _mileageToken.mint(account, amount);
         }
         emit MileageMinted(studentId, account, msg.sender, amount);
@@ -216,20 +216,20 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
         // is valid account, studentId?
         if (account == address(0)) {
             account = students[studentId];
-            require(account != address(0), "student not registered");
+            if (account == address(0)) revert StudentIdNotRegistered();
             _mileageToken.burnFrom(account, amount);
         } else {
             studentId = studentByAddr[account];
-            require(studentId != bytes32(0), "unregistered address");
-            require(students[studentId] == account, "unauthorized student ID");
+            if (studentId == bytes32(0)) revert AddressNotRegistered();
+            if (students[studentId] != account) revert StudentIdMismatch(studentId, account);
             _mileageToken.burnFrom(account, amount);
         }
         emit MileageBurned(studentId, account, msg.sender, amount);
     }
 
     function changeAccount(bytes32 studentId, address targetAccount) external onlyAdmin {
-        require(studentByAddr[targetAccount] == bytes32(0), "target address already registered");
-        require(targetAccount != address(0), "invalid target account");
+        if (studentByAddr[targetAccount] != bytes32(0)) revert TargetInUse();
+        if (targetAccount == address(0)) revert InvalidTargetAccount();
         address currentAccount = students[studentId];
         uint256 balance = 0;
         bool isParticipated = false;
@@ -252,12 +252,12 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
     }
 
     function migrateStudentId(bytes32 currentId, bytes32 nextId) external onlyAdmin {
-        require(currentId != bytes32(0) && nextId != bytes32(0), "empty student ID");
-        require(currentId != nextId, "student IDs must be different");
+        if (currentId == bytes32(0) || nextId == bytes32(0)) revert EmptyStudentId();
+        if (currentId == nextId) revert SameStudentId();
 
         address account = students[currentId];
-        require(account != address(0), "student ID not registered");
-        require(students[nextId] == address(0), "next student ID already exists");
+        if (account == address(0)) revert StudentIdNotRegistered();
+        if (students[nextId] != address(0)) revert StudentIdInUse(nextId);
 
         if (pendingAccountChanges[currentId].targetAccount != address(0)) {
             delete pendingAccountChanges[currentId];
@@ -272,7 +272,7 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
 
     // Imediately update student record
     function updateStudentRecord(bytes32 studentId, address targetAccount, bool _clear) external onlyAdmin {
-        require(studentId != bytes32(0), "empty student ID");
+        if (studentId == bytes32(0)) revert EmptyStudentId();
 
         address currentAccount = students[studentId];
 
@@ -293,7 +293,7 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
     function transferFromToken(bytes32 fromStudentId, bytes32 toStudentId, uint256 amount) external onlyAdmin {
         address from = students[fromStudentId];
         address to = students[toStudentId];
-        require(from != address(0) && to != address(0), "students not registered");
+        if (from == address(0) || to == address(0)) revert StudentNotRegistered();
         // transfer token directly
         _mileageToken.transferFrom(from, to, amount);
     }
@@ -302,8 +302,8 @@ contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFac
 
     function _validateAccount() internal view returns (bytes32) {
         bytes32 studentId = studentByAddr[msg.sender];
-        require(studentId != bytes32(0), "unregistered address");
-        require(students[studentId] == msg.sender, "unauthorized student ID");
+        if (studentId == bytes32(0)) revert AddressNotRegistered();
+        if (students[studentId] != msg.sender) revert StudentIdMismatch(studentId, msg.sender);
         return studentId;
     }
 
