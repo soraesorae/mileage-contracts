@@ -30,7 +30,10 @@ abstract contract SortedList is ISortedList {
         return _participated[addr];
     }
 
-    function _getElementRange(uint256 from, uint256 to) internal view virtual returns (bytes memory) {
+    function _getElementRange(
+        uint256 from,
+        uint256 to
+    ) internal view virtual returns (bytes memory) {
         if (from == 0) revert InvalidRangeFrom();
         if (from > to) revert InvalidRangeTo(from, to);
 
@@ -56,7 +59,10 @@ abstract contract SortedList is ISortedList {
         return abi.encode(result);
     }
 
-    function _updateElement(address target, uint256 newValue) internal virtual {
+    function _updateElement(
+        address target,
+        uint256 newValue
+    ) internal virtual {
         uint256 prevValue = 0;
 
         if (_participated[target]) {
@@ -69,7 +75,10 @@ abstract contract SortedList is ISortedList {
         emit UpdateElement(target, prevValue, newValue);
     }
 
-    function _insertElement(address addr, uint256 value) internal virtual {
+    function _insertElement(
+        address addr,
+        uint256 value
+    ) internal virtual {
         address ptr = _head;
         address prev = DUMMY;
 
@@ -90,7 +99,10 @@ abstract contract SortedList is ISortedList {
         ++_listLength;
     }
 
-    function _removeElement(address target, bool _event) internal {
+    function _removeElement(
+        address target,
+        bool _event
+    ) internal {
         if (!_participated[target]) revert AddressNotInList(target);
         if (_listLength == 0) revert ListIsEmpty();
 

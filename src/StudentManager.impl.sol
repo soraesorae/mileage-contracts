@@ -20,11 +20,18 @@ contract StudentManagerImpl is Initializable, SwMileageTokenFactory, Admin, Paus
 
     SwMileageTokenImpl public _mileageToken;
 
-    constructor(address mileageToken_, address tokenImpl) SwMileageTokenFactory(tokenImpl) {
+    constructor(
+        address mileageToken_,
+        address tokenImpl
+    ) SwMileageTokenFactory(tokenImpl) {
         _mileageToken = SwMileageTokenImpl(mileageToken_);
     }
 
-    function initialize(address mileageToken_, address tokenImpl, address admin) external initializer {
+    function initialize(
+        address mileageToken_,
+        address tokenImpl,
+        address admin
+    ) external initializer {
         _mileageToken = SwMileageTokenImpl(mileageToken_);
         _addAdmin(admin);
         setImplementation(tokenImpl);
@@ -152,17 +159,18 @@ contract StudentManagerImpl is Initializable, SwMileageTokenFactory, Admin, Paus
 
         uint256 documentIndex = documentsCount++;
         docSubmissions[documentIndex] = DocumentSubmission({
-            studentId: studentId,
-            docHash: docHash,
-            createdAt: block.timestamp,
-            status: SubmissionStatus.Pending
+            studentId: studentId, docHash: docHash, createdAt: block.timestamp, status: SubmissionStatus.Pending
         });
 
         emit DocSubmitted(documentIndex, studentId, docHash);
         return documentIndex;
     }
 
-    function approveDocument(uint256 documentIndex, uint256 amount, bytes32 reasonHash) external onlyAdmin {
+    function approveDocument(
+        uint256 documentIndex,
+        uint256 amount,
+        bytes32 reasonHash
+    ) external onlyAdmin {
         if (documentIndex >= documentsCount) revert InvalidDocIndex(documentIndex, documentsCount);
         DocumentSubmission storage document = docSubmissions[documentIndex];
         if (document.status != SubmissionStatus.Pending) revert NotPendingDocument();
@@ -197,7 +205,11 @@ contract StudentManagerImpl is Initializable, SwMileageTokenFactory, Admin, Paus
 
     ////////////////////////// admin utilities
 
-    function mint(bytes32 studentId, address account, uint256 amount) external onlyAdmin {
+    function mint(
+        bytes32 studentId,
+        address account,
+        uint256 amount
+    ) external onlyAdmin {
         // is valid account, studentId?
         if (account == address(0)) {
             account = students[studentId];
@@ -212,7 +224,11 @@ contract StudentManagerImpl is Initializable, SwMileageTokenFactory, Admin, Paus
         emit MileageMinted(studentId, account, msg.sender, amount);
     }
 
-    function burnFrom(bytes32 studentId, address account, uint256 amount) external onlyAdmin {
+    function burnFrom(
+        bytes32 studentId,
+        address account,
+        uint256 amount
+    ) external onlyAdmin {
         // is valid account, studentId?
         if (account == address(0)) {
             account = students[studentId];
@@ -227,7 +243,10 @@ contract StudentManagerImpl is Initializable, SwMileageTokenFactory, Admin, Paus
         emit MileageBurned(studentId, account, msg.sender, amount);
     }
 
-    function changeAccount(bytes32 studentId, address targetAccount) external onlyAdmin {
+    function changeAccount(
+        bytes32 studentId,
+        address targetAccount
+    ) external onlyAdmin {
         if (studentByAddr[targetAccount] != bytes32(0)) revert TargetInUse();
         if (targetAccount == address(0)) revert InvalidTargetAccount();
         address currentAccount = students[studentId];
@@ -251,7 +270,10 @@ contract StudentManagerImpl is Initializable, SwMileageTokenFactory, Admin, Paus
         emit AccountChanged(studentId, currentAccount, targetAccount);
     }
 
-    function migrateStudentId(bytes32 currentId, bytes32 nextId) external onlyAdmin {
+    function migrateStudentId(
+        bytes32 currentId,
+        bytes32 nextId
+    ) external onlyAdmin {
         if (currentId == bytes32(0) || nextId == bytes32(0)) revert EmptyStudentId();
         if (currentId == nextId) revert SameStudentId();
 
@@ -271,7 +293,11 @@ contract StudentManagerImpl is Initializable, SwMileageTokenFactory, Admin, Paus
     }
 
     // Imediately update student record
-    function updateStudentRecord(bytes32 studentId, address targetAccount, bool _clear) external onlyAdmin {
+    function updateStudentRecord(
+        bytes32 studentId,
+        address targetAccount,
+        bool _clear
+    ) external onlyAdmin {
         if (studentId == bytes32(0)) revert EmptyStudentId();
 
         address currentAccount = students[studentId];
@@ -290,7 +316,11 @@ contract StudentManagerImpl is Initializable, SwMileageTokenFactory, Admin, Paus
         emit StudentRecordUpdated(studentId, currentAccount, targetAccount);
     }
 
-    function transferFromToken(bytes32 fromStudentId, bytes32 toStudentId, uint256 amount) external onlyAdmin {
+    function transferFromToken(
+        bytes32 fromStudentId,
+        bytes32 toStudentId,
+        uint256 amount
+    ) external onlyAdmin {
         address from = students[fromStudentId];
         address to = students[toStudentId];
         if (from == address(0) || to == address(0)) revert StudentNotRegistered();
@@ -307,7 +337,10 @@ contract StudentManagerImpl is Initializable, SwMileageTokenFactory, Admin, Paus
         return studentId;
     }
 
-    function _rejectDocument(uint256 documentIndex, bytes32 reasonHash) internal {
+    function _rejectDocument(
+        uint256 documentIndex,
+        bytes32 reasonHash
+    ) internal {
         DocumentSubmission storage document = docSubmissions[documentIndex];
         document.status = SubmissionStatus.Rejected;
 

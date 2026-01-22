@@ -21,9 +21,16 @@ contract SwMileageTokenImpl is KIP7Burnable, Initializable, Admin, SortedList, I
     /// @dev contract constructor
     /// set KIP7 token name, symbol
     ///
-    constructor(string memory name_, string memory symbol_) KIP7(name_, symbol_) {}
+    constructor(
+        string memory name_,
+        string memory symbol_
+    ) KIP7(name_, symbol_) {}
 
-    function initialize(string memory name_, string memory symbol_, address admin) external initializer {
+    function initialize(
+        string memory name_,
+        string memory symbol_,
+        address admin
+    ) external initializer {
         _name = name_;
         _symbol = symbol_;
         _addAdmin(admin);
@@ -54,7 +61,10 @@ contract SwMileageTokenImpl is KIP7Burnable, Initializable, Admin, SortedList, I
     /// @param account `to` account
     /// @param amount token amount
     ///
-    function mint(address account, uint256 amount) public onlyAdmin {
+    function mint(
+        address account,
+        uint256 amount
+    ) public onlyAdmin {
         _mint(account, amount);
     }
 
@@ -67,7 +77,13 @@ contract SwMileageTokenImpl is KIP7Burnable, Initializable, Admin, SortedList, I
     }
     ////
 
-    function _approve(address, /* owner */ address, /* spender */ uint256 /* amount */ ) internal pure override {
+    function _approve(
+        address,
+        /* owner */
+        address,
+        /* spender */
+        uint256 /* amount */
+    ) internal pure override {
         revert ApprovalNotAllowed();
     }
 
@@ -77,7 +93,10 @@ contract SwMileageTokenImpl is KIP7Burnable, Initializable, Admin, SortedList, I
     /// @param account target account
     /// @param amount amount
     ///
-    function burnFrom(address account, uint256 amount) public override (IKIP7Burnable, KIP7Burnable) onlyAdmin {
+    function burnFrom(
+        address account,
+        uint256 amount
+    ) public override (IKIP7Burnable, KIP7Burnable) onlyAdmin {
         _burn(account, amount);
     }
 
@@ -90,11 +109,19 @@ contract SwMileageTokenImpl is KIP7Burnable, Initializable, Admin, SortedList, I
         return true;
     }
 
-    function _beforeTokenTransfer(address, address, uint256) internal view override {
+    function _beforeTokenTransfer(
+        address,
+        address,
+        uint256
+    ) internal view override {
         if (!isAdmin(msg.sender)) revert AdminOnlyOperation();
     }
 
-    function _afterTokenTransfer(address from, address to, uint256 /* amount */ ) internal virtual override {
+    function _afterTokenTransfer(
+        address from,
+        address to,
+        uint256 /* amount */
+    ) internal virtual override {
         if (from == address(0)) {
             // mint
             _updateElement(to, balanceOf(to));
@@ -112,7 +139,10 @@ contract SwMileageTokenImpl is KIP7Burnable, Initializable, Admin, SortedList, I
         _updateElement(to, balanceOf(to));
     }
 
-    function _updateOrRemove(address account, uint256 balance) private {
+    function _updateOrRemove(
+        address account,
+        uint256 balance
+    ) private {
         if (balance != 0) {
             _updateElement(account, balance);
         } else {
@@ -120,7 +150,10 @@ contract SwMileageTokenImpl is KIP7Burnable, Initializable, Admin, SortedList, I
         }
     }
 
-    function getRankingRange(uint256 from, uint256 to) external view returns (Student[] memory) {
+    function getRankingRange(
+        uint256 from,
+        uint256 to
+    ) external view returns (Student[] memory) {
         return abi.decode(_getElementRange(from, to), (Student[]));
     }
 }

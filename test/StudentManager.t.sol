@@ -13,7 +13,10 @@ interface IStudentManagerFactory {
 }
 
 contract StudentManagerHarness is StudentManagerImpl {
-    constructor(address token, address tokenImpl) StudentManagerImpl(token, tokenImpl) {}
+    constructor(
+        address token,
+        address tokenImpl
+    ) StudentManagerImpl(token, tokenImpl) {}
 }
 
 contract StudentManagerTest is Test {
@@ -90,7 +93,10 @@ contract StudentManagerTest is Test {
         }
     }
 
-    function _assertBalance(address account, uint256 expected) private view {
+    function _assertBalance(
+        address account,
+        uint256 expected
+    ) private view {
         if (token.participated(account)) {
             assertEq(token.balanceOf(account), expected);
         }

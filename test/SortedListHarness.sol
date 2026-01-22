@@ -5,7 +5,10 @@ import {SortedList} from "../src/SortedList.sol";
 import {ISortedList} from "../src/ISortedList.sol";
 
 contract SortedListHarness is SortedList {
-    function update(address addr, uint256 value) public {
+    function update(
+        address addr,
+        uint256 value
+    ) public {
         _updateElement(addr, value);
     }
 
@@ -19,7 +22,10 @@ contract SortedListHarness is SortedList {
         return result;
     }
 
-    function getRange(uint256 from, uint256 to) public view returns (ISortedList.DataPair[] memory) {
+    function getRange(
+        uint256 from,
+        uint256 to
+    ) public view returns (ISortedList.DataPair[] memory) {
         return abi.decode(_getElementRange(from, to), (ISortedList.DataPair[]));
     }
 
@@ -47,7 +53,10 @@ contract SortedListHarness is SortedList {
         _removeElement(target, true);
     }
 
-    function push(address addr, uint256 value) public {
+    function push(
+        address addr,
+        uint256 value
+    ) public {
         require(_participated[addr] == false, "address exists");
         _list[addr] = ISortedList.Node({next: _head, value: value});
         _head = addr;

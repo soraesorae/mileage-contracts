@@ -5,7 +5,11 @@ import {Clones} from "openzeppelin-contracts/contracts/proxy/Clones.sol";
 import {IAdmin} from "./IAdmin.sol";
 
 interface ISwMileageTokenImpl is IAdmin {
-    function initialize(string memory name_, string memory symbol_, address admin) external;
+    function initialize(
+        string memory name_,
+        string memory symbol_,
+        address admin
+    ) external;
 }
 
 contract SwMileageTokenFactory {
@@ -31,14 +35,21 @@ contract SwMileageTokenFactory {
         _implementation = impl;
     }
 
-    function deploy(string memory name, string memory symbol) external returns (address) {
+    function deploy(
+        string memory name,
+        string memory symbol
+    ) external returns (address) {
         address clone = _implementation.clone();
         ISwMileageTokenImpl(clone).initialize(name, symbol, msg.sender);
         emit MileageTokenCreated(clone);
         return address(clone);
     }
 
-    function deployWithAdmin(string memory name, string memory symbol, address admin) external returns (address) {
+    function deployWithAdmin(
+        string memory name,
+        string memory symbol,
+        address admin
+    ) external returns (address) {
         address clone = _implementation.clone();
         ISwMileageTokenImpl(clone).initialize(name, symbol, admin);
         emit MileageTokenCreated(clone);

@@ -4,7 +4,11 @@ pragma solidity ^0.8.13;
 import {Clones} from "openzeppelin-contracts/contracts/proxy/Clones.sol";
 
 interface IStudentManagerImpl {
-    function initialize(address _mileageToken, address implementation, address admin) external;
+    function initialize(
+        address _mileageToken,
+        address implementation,
+        address admin
+    ) external;
 }
 
 contract StudentManagerFactory {
@@ -30,7 +34,10 @@ contract StudentManagerFactory {
         _implementation = impl;
     }
 
-    function deploy(address mileageToken, address tokenImplementation) external returns (address) {
+    function deploy(
+        address mileageToken,
+        address tokenImplementation
+    ) external returns (address) {
         address clone = _implementation.clone();
         IStudentManagerImpl(clone).initialize(mileageToken, tokenImplementation, msg.sender);
         emit StudentManagerCreated(clone);

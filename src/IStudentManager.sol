@@ -97,7 +97,11 @@ interface IStudentManager {
         bytes32 docHash
     ) external returns (uint256);
 
-    function approveDocument(uint256 documentIndex, uint256 amount, bytes32 reasonHash) external;
+    function approveDocument(
+        uint256 documentIndex,
+        uint256 amount,
+        bytes32 reasonHash
+    ) external;
 
     function getDocSubmission(
         uint256 documentIndex
@@ -107,11 +111,26 @@ interface IStudentManager {
         uint256 documentIndex
     ) external view returns (DocumentResult memory);
 
-    function burnFrom(bytes32 studendtId, address account, uint256 amount) external;
+    function burnFrom(
+        bytes32 studendtId,
+        address account,
+        uint256 amount
+    ) external;
 
-    function changeAccount(bytes32 studentId, address targetAccount) external;
+    function changeAccount(
+        bytes32 studentId,
+        address targetAccount
+    ) external;
 
-    function updateStudentRecord(bytes32 studentId, address targetAccount, bool _clear) external;
+    function updateStudentRecord(
+        bytes32 studentId,
+        address targetAccount,
+        bool _clear
+    ) external;
 
-    function transferFromToken(bytes32 fromStudentId, bytes32 toStudentId, uint256 amount) external;
+    function transferFromToken(
+        bytes32 fromStudentId,
+        bytes32 toStudentId,
+        uint256 amount
+    ) external;
 }
