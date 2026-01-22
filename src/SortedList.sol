@@ -4,15 +4,15 @@ pragma solidity ^0.8.13;
 import {ISortedList} from "./ISortedList.sol";
 
 abstract contract SortedList is ISortedList {
-    mapping(address => Node) private _list;
-    mapping(address => bool) private _participated;
+    mapping(address => Node) internal _list;
+    mapping(address => bool) internal _participated;
 
-    address private constant END_OF_LIST = address(0xdeadbeef);
-    address private constant DUMMY = address(0x0badbeef);
-    address private constant NOT_FOUND = address(0x04040404);
-    address private _head = END_OF_LIST;
+    address internal constant END_OF_LIST = address(0xdeadbeef);
+    address internal constant DUMMY = address(0x0badbeef);
+    address internal constant NOT_FOUND = address(0x04040404);
+    address internal _head = END_OF_LIST;
 
-    uint256 private _listLength = 0;
+    uint256 internal _listLength = 0;
 
     constructor() {}
 
@@ -30,61 +30,6 @@ abstract contract SortedList is ISortedList {
         return _participated[addr];
     }
 
-    // util function for testing
-    // Use this function only for testing
-    function _push(address addr, uint256 value) internal virtual {
-        require(_participated[addr] == false, "address exists");
-
-        _list[addr] = Node({next: _head, value: value});
-        _head = addr;
-        _participated[addr] = true;
-        ++_listLength;
-    }
-
-    // Use this function only for testing
-    function _pop() internal virtual {
-        require(_head != END_OF_LIST, "list is empty");
-
-        address next = _list[_head].next;
-        _participated[_head] = false;
-        delete _list[_head];
-        _head = next;
-        --_listLength;
-    }
-
-    // Use this function only for testing
-    function _getElementIndex(
-        address account
-    ) internal view virtual returns (int256) {
-        if (!_participated[account]) {
-            return -1;
-        }
-
-        address current = _head;
-        int256 index = 1;
-        while (current != END_OF_LIST) {
-            if (current == account) {
-                return index;
-            }
-            current = _list[current].next;
-            index++;
-        }
-
-        return -1;
-    }
-
-    // Use this function only for testing
-    function _getAllElement() internal view virtual returns (bytes memory) {
-        DataPair[] memory result = new DataPair[](_listLength);
-
-        address current = _head;
-        for (uint256 i = 0; i < _listLength; i++) {
-            result[i] = DataPair({addr: current, value: _list[current].value});
-            current = _list[current].next;
-        }
-
-        return abi.encode(result);
-    }
 
     function _getElementRange(uint256 from, uint256 to) internal view virtual returns (bytes memory) {
         if (from == 0) revert InvalidRangeFrom();

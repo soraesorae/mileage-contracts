@@ -10,7 +10,13 @@ contract SortedListHarness is SortedList {
     }
 
     function getAll() public view returns (ISortedList.DataPair[] memory) {
-        return abi.decode(_getAllElement(), (ISortedList.DataPair[]));
+        ISortedList.DataPair[] memory result = new ISortedList.DataPair[](_getListLength());
+        address current = _head;
+        for (uint256 i = 0; i < _getListLength(); i++) {
+            result[i] = ISortedList.DataPair({addr: current, value: _list[current].value});
+            current = _list[current].next;
+        }
+        return result;
     }
 
     function getRange(uint256 from, uint256 to) public view returns (ISortedList.DataPair[] memory) {
@@ -20,7 +26,19 @@ contract SortedListHarness is SortedList {
     function indexOf(
         address account
     ) public view returns (int256) {
-        return _getElementIndex(account);
+        if (!_participated[account]) {
+            return -1;
+        }
+        address current = _head;
+        int256 index = 1;
+        while (current != END_OF_LIST) {
+            if (current == account) {
+                return index;
+            }
+            current = _list[current].next;
+            index++;
+        }
+        return -1;
     }
 
     function remove(
@@ -30,17 +48,26 @@ contract SortedListHarness is SortedList {
     }
 
     function push(address addr, uint256 value) public {
-        _push(addr, value);
+        require(_participated[addr] == false, "address exists");
+        _list[addr] = ISortedList.Node({next: _head, value: value});
+        _head = addr;
+        _participated[addr] = true;
+        ++_listLength;
     }
 
     function pop() public {
-        _pop();
+        require(_head != END_OF_LIST, "list is empty");
+        address next = _list[_head].next;
+        _participated[_head] = false;
+        delete _list[_head];
+        _head = next;
+        --_listLength;
     }
 
     function contains(
         address addr
     ) public view returns (bool) {
-        return _getElementIndex(addr) >= 0;
+        return indexOf(addr) >= 0;
     }
 
     function valueOf(
