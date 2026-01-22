@@ -2,6 +2,10 @@
 pragma solidity ^0.8.13;
 
 interface ISortedList {
+    error InvalidRangeFrom();
+    error InvalidRangeTo(uint256 from, uint256 to);
+    error AddressNotInList(address target);
+    error ListIsEmpty();
     struct Node {
         address next;
         uint256 value;

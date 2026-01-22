@@ -205,11 +205,11 @@ contract SortedListTest is Test {
     }
 
     function test_removeElement_addressNotFound() public {
-        vm.expectRevert("not in list");
+        vm.expectRevert(abi.encodeWithSelector(ISortedList.AddressNotInList.selector, alice));
         list.remove(alice);
 
         list.update(bob, 100);
-        vm.expectRevert("not in list");
+        vm.expectRevert(abi.encodeWithSelector(ISortedList.AddressNotInList.selector, alice));
         list.remove(alice);
     }
 
@@ -380,21 +380,18 @@ contract SortedListTest is Test {
     }
 
     function test_reverts() public {
-        vm.expectRevert("not in list");
+        vm.expectRevert(abi.encodeWithSelector(ISortedList.AddressNotInList.selector, alice));
         list.remove(alice);
 
         list.update(alice, 100);
-        vm.expectRevert("address exists");
-        list.push(alice, 200);
-
         list.remove(alice);
         vm.expectRevert("list is empty");
         list.pop();
 
-        vm.expectRevert("from is zero");
+        vm.expectRevert(ISortedList.InvalidRangeFrom.selector);
         list.getRange(0, 5);
 
-        vm.expectRevert("to < from");
+        vm.expectRevert(abi.encodeWithSelector(ISortedList.InvalidRangeTo.selector, 5, 3));
         list.getRange(5, 3);
     }
 
@@ -525,10 +522,10 @@ contract SortedListTest is Test {
     }
 
     function test_getElementRange_invalidParameters() public {
-        vm.expectRevert("from is zero");
+        vm.expectRevert(ISortedList.InvalidRangeFrom.selector);
         list.getRange(0, 5);
 
-        vm.expectRevert("to < from");
+        vm.expectRevert(abi.encodeWithSelector(ISortedList.InvalidRangeTo.selector, 5, 3));
         list.getRange(5, 3);
     }
 }

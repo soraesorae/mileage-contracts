@@ -87,8 +87,8 @@ abstract contract SortedList is ISortedList {
     }
 
     function _getElementRange(uint256 from, uint256 to) internal view virtual returns (bytes memory) {
-        require(from > 0, "from is zero");
-        require(from <= to, "to < from");
+        if (from == 0) revert InvalidRangeFrom();
+        if (from > to) revert InvalidRangeTo(from, to);
 
         if (from > _listLength) {
             DataPair[] memory empty;
@@ -147,8 +147,8 @@ abstract contract SortedList is ISortedList {
     }
 
     function _removeElement(address target, bool _event) internal {
-        require(_participated[target], "not in list");
-        require(_listLength > 0, "list is empty");
+        if (!_participated[target]) revert AddressNotInList(target);
+        if (_listLength == 0) revert ListIsEmpty();
 
         address ptr = _head;
         address prev = DUMMY;
