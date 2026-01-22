@@ -8,7 +8,7 @@ import {Admin} from "./Admin.sol";
 import {Initializable} from "kaia-contracts/contracts/proxy/utils/Initializable.sol";
 import {Pausable} from "kaia-contracts/contracts/security/Pausable.sol";
 
-contract StudentManagerImpl is IStudentManager, Initializable, SwMileageTokenFactory, Admin, Pausable {
+contract StudentManagerImpl is Initializable, SwMileageTokenFactory, Admin, Pausable, IStudentManager {
     mapping(bytes32 => address) public students;
     mapping(address => bytes32) public studentByAddr;
     mapping(uint256 => DocumentSubmission) public docSubmissions;

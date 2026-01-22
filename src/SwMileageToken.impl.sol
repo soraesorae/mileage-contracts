@@ -14,7 +14,7 @@ import {ISortedList} from "./ISortedList.sol";
 import {ISwMileageToken} from "./ISwMileageToken.sol";
 
 // TODO: new contract for multiple owner instead of `Ownable`
-contract SwMileageTokenImpl is Context, ISwMileageToken, KIP7Burnable, Initializable, Admin, ISortedList, SortedList {
+contract SwMileageTokenImpl is KIP7Burnable, Initializable, Admin, SortedList, ISwMileageToken {
     string private _name;
     string private _symbol;
 
