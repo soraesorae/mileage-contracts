@@ -95,30 +95,28 @@ contract SwMileageTokenImpl is Context, ISwMileageToken, KIP7Burnable, Initializ
     }
 
     function _afterTokenTransfer(address from, address to, uint256 /* amount */ ) internal virtual override {
-        // require(from == address(0) || to == address(0));
-        // increase decrease
         if (from == address(0)) {
             // mint
             _updateElement(to, balanceOf(to));
-        } else if (to == address(0)) {
+            return;
+        }
+        
+        if (to == address(0)) {
             // burn
-            uint256 balance = balanceOf(from);
-            if (balance != 0) {
-                _updateElement(from, balance);
-            } else {
-                _removeElement(from, true);
-            }
+            _updateOrRemove(from, balanceOf(from));
+            return;
+        }
+
+        // transferFrom
+        _updateOrRemove(from, balanceOf(from));
+        _updateElement(to, balanceOf(to));
+    }
+
+    function _updateOrRemove(address account, uint256 balance) private {
+        if (balance != 0) {
+            _updateElement(account, balance);
         } else {
-            // transferFrom
-            uint256 fromBalance = balanceOf(from);
-            uint256 toBalance = balanceOf(to);
-            if (fromBalance != 0) {
-                _updateElement(from, fromBalance);
-                _updateElement(to, toBalance);
-            } else {
-                _removeElement(from, false);
-                _updateElement(to, toBalance);
-            }
+            _removeElement(account, true);
         }
     }
 
