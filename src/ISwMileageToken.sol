@@ -5,6 +5,9 @@ import {IKIP7} from "kaia-contracts/contracts/KIP/token/KIP7/IKIP7.sol";
 import {IKIP7Burnable} from "kaia-contracts/contracts/KIP/token/KIP7/extensions/IKIP7Burnable.sol";
 
 interface ISwMileageToken is IKIP7, IKIP7Burnable {
+    error BurnNotAllowed();
+    error ApprovalNotAllowed();
+    error AdminOnlyOperation();
     struct Student {
         address account;
         uint256 balance;

@@ -74,7 +74,7 @@ contract SwMileageTokenTest is Test {
     function test_burn_Admin() public {
         vm.startPrank(alice);
         mileageToken.mint(bob, 10);
-        vm.expectRevert("burn is not allowed");
+        vm.expectRevert(ISwMileageToken.BurnNotAllowed.selector);
         mileageToken.burn(5);
 
         assertEq(mileageToken.balanceOf(bob), 10);
@@ -85,7 +85,7 @@ contract SwMileageTokenTest is Test {
         mileageToken.mint(bob, 10);
 
         vm.prank(bob);
-        vm.expectRevert("burn is not allowed");
+        vm.expectRevert(ISwMileageToken.BurnNotAllowed.selector);
         mileageToken.burn(5);
 
         assertEq(mileageToken.balanceOf(bob), 10);
@@ -134,7 +134,7 @@ contract SwMileageTokenTest is Test {
     }
 
     function test_burnFrom_0() public {
-        vm.expectRevert("not in list");
+        vm.expectRevert(abi.encodeWithSelector(ISortedList.AddressNotInList.selector, bob));
         vm.startPrank(alice);
         mileageToken.burnFrom(bob, 0);
     }
@@ -414,7 +414,7 @@ contract SwMileageTokenTest is Test {
         vm.stopPrank();
 
         vm.prank(bob);
-        vm.expectRevert("admin only operation");
+        vm.expectRevert(ISwMileageToken.AdminOnlyOperation.selector);
         mileageToken.transfer(alice, 50);
     }
 
@@ -431,17 +431,17 @@ contract SwMileageTokenTest is Test {
 
     function test_approve_NotPermitted() public {
         vm.prank(bob);
-        vm.expectRevert("approval is not allowed");
+        vm.expectRevert(ISwMileageToken.ApprovalNotAllowed.selector);
         mileageToken.approve(bob, 50);
     }
 
     function test_getRankingRange_InvalidParams() public {
         vm.startPrank(alice);
 
-        vm.expectRevert("from is zero");
+        vm.expectRevert(ISortedList.InvalidRangeFrom.selector);
         mileageToken.getRankingRange(0, 10);
 
-        vm.expectRevert("to < from");
+        vm.expectRevert(abi.encodeWithSelector(ISortedList.InvalidRangeTo.selector, 10, 5));
         mileageToken.getRankingRange(10, 5);
         vm.stopPrank();
     }

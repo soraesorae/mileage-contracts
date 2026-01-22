@@ -219,7 +219,7 @@ contract StudentManagerTest is Test {
 
     function test_registerStudent_EmptyId() public {
         vm.prank(charlie);
-        vm.expectRevert("empty student ID");
+        vm.expectRevert(IStudentManager.EmptyStudentId.selector);
         manager.registerStudent(bytes32(0));
     }
 
@@ -242,17 +242,17 @@ contract StudentManagerTest is Test {
 
         // Invalid target account (zero address)
         vm.prank(alice);
-        vm.expectRevert("invalid target account");
+        vm.expectRevert(IStudentManager.InvalidTargetAccount.selector);
         manager.proposeAccountChange(address(0));
 
         // Target address already registered
         vm.prank(alice);
-        vm.expectRevert("target address already registered");
+        vm.expectRevert(IStudentManager.TargetInUse.selector);
         manager.proposeAccountChange(bob);
 
         // Unregistered address trying to propose
         vm.prank(charlie);
-        vm.expectRevert("unregistered address");
+        vm.expectRevert(IStudentManager.AddressNotRegistered.selector);
         manager.proposeAccountChange(makeAddr("newAddr"));
     }
 
@@ -296,7 +296,7 @@ contract StudentManagerTest is Test {
 
         // No pending account change
         vm.prank(bob);
-        vm.expectRevert("no pending account change");
+        vm.expectRevert(IStudentManager.NoPendingChange.selector);
         manager.confirmAccountChange(keccak256("alice"));
 
         vm.prank(alice);
@@ -304,7 +304,7 @@ contract StudentManagerTest is Test {
 
         // Wrong confirmation account
         vm.prank(charlie);
-        vm.expectRevert("confirmation must be from target account");
+        vm.expectRevert(IStudentManager.UnauthorizedConfirmation.selector);
         manager.confirmAccountChange(keccak256("alice"));
 
         // Clear the pending change first
@@ -317,7 +317,7 @@ contract StudentManagerTest is Test {
 
         // bob tries to propose to charlie's address
         vm.prank(bob);
-        vm.expectRevert("target address already registered");
+        vm.expectRevert(IStudentManager.TargetInUse.selector);
         manager.proposeAccountChange(charlie);
     }
 
@@ -362,12 +362,12 @@ contract StudentManagerTest is Test {
 
         // Empty new student ID
         vm.prank(alice);
-        vm.expectRevert("empty new student ID");
+        vm.expectRevert(IStudentManager.EmptyStudentId.selector);
         manager.changeStudentId(bytes32(0));
 
         // Same student ID
         vm.prank(alice);
-        vm.expectRevert("student IDs must be different");
+        vm.expectRevert(IStudentManager.SameStudentId.selector);
         manager.changeStudentId(keccak256("alice"));
 
         // Existing student ID
@@ -375,12 +375,12 @@ contract StudentManagerTest is Test {
         manager.registerStudent(keccak256("bob"));
 
         vm.prank(alice);
-        vm.expectRevert("new student ID already exists");
+        vm.expectRevert(abi.encodeWithSelector(IStudentManager.StudentIdInUse.selector, keccak256("bob")));
         manager.changeStudentId(keccak256("bob"));
 
         // Unregistered address
         vm.prank(charlie);
-        vm.expectRevert("unregistered address");
+        vm.expectRevert(IStudentManager.AddressNotRegistered.selector);
         manager.changeStudentId(keccak256("charlie"));
     }
 
@@ -476,7 +476,7 @@ contract StudentManagerTest is Test {
 
         // Document index out of range
         vm.prank(admin);
-        vm.expectRevert("document index out of range");
+        vm.expectRevert(abi.encodeWithSelector(IStudentManager.InvalidDocIndex.selector, 0, 0));
         manager.approveDocument(0, 100, reasonHash);
 
         // Document not pending (already processed)
@@ -490,7 +490,7 @@ contract StudentManagerTest is Test {
         manager.approveDocument(docIndex, 100, reasonHash);
 
         vm.prank(admin);
-        vm.expectRevert("document not pending");
+        vm.expectRevert(IStudentManager.NotPendingDocument.selector);
         manager.approveDocument(docIndex, 200, reasonHash);
     }
 
@@ -652,7 +652,7 @@ contract StudentManagerTest is Test {
 
         // Old address cannot register new student
         vm.prank(alice);
-        vm.expectRevert("address already registered");
+        vm.expectRevert(IStudentManager.AddressInUse.selector);
         manager.registerStudent(keccak256("charlie"));
     }
 
@@ -673,11 +673,11 @@ contract StudentManagerTest is Test {
 
         // Only active address works
         vm.prank(admin);
-        vm.expectRevert("unauthorized student ID");
+        vm.expectRevert(abi.encodeWithSelector(IStudentManager.StudentIdMismatch.selector, keccak256("alice"), alice));
         manager.mint(bytes32(0), alice, 50);
 
         vm.prank(admin);
-        vm.expectRevert("unauthorized student ID");
+        vm.expectRevert(abi.encodeWithSelector(IStudentManager.StudentIdMismatch.selector, keccak256("alice"), alice));
         manager.burnFrom(bytes32(0), alice, 25);
 
         // New address operations work

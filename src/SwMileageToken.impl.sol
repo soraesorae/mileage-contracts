@@ -14,7 +14,7 @@ import {ISortedList} from "./ISortedList.sol";
 import {ISwMileageToken} from "./ISwMileageToken.sol";
 
 // TODO: new contract for multiple owner instead of `Ownable`
-contract SwMileageTokenImpl is Context, ISwMileageToken, KIP7Burnable, Initializable, Admin, ISortedList, SortedList {
+contract SwMileageTokenImpl is KIP7Burnable, Initializable, Admin, SortedList, ISwMileageToken {
     string private _name;
     string private _symbol;
 
@@ -63,12 +63,12 @@ contract SwMileageTokenImpl is Context, ISwMileageToken, KIP7Burnable, Initializ
     function burn(
         uint256 /* amount */
     ) public pure override (IKIP7Burnable, KIP7Burnable) {
-        require(false, "burn is not allowed");
+        revert BurnNotAllowed();
     }
     ////
 
     function _approve(address, /* owner */ address, /* spender */ uint256 /* amount */ ) internal pure override {
-        require(false, "approval is not allowed");
+        revert ApprovalNotAllowed();
     }
 
     /// @dev KIP7Burnable burnFrom
@@ -91,34 +91,32 @@ contract SwMileageTokenImpl is Context, ISwMileageToken, KIP7Burnable, Initializ
     }
 
     function _beforeTokenTransfer(address, address, uint256) internal view override {
-        require(isAdmin(msg.sender), "admin only operation");
+        if (!isAdmin(msg.sender)) revert AdminOnlyOperation();
     }
 
     function _afterTokenTransfer(address from, address to, uint256 /* amount */ ) internal virtual override {
-        // require(from == address(0) || to == address(0));
-        // increase decrease
         if (from == address(0)) {
             // mint
             _updateElement(to, balanceOf(to));
-        } else if (to == address(0)) {
+            return;
+        }
+        
+        if (to == address(0)) {
             // burn
-            uint256 balance = balanceOf(from);
-            if (balance != 0) {
-                _updateElement(from, balance);
-            } else {
-                _removeElement(from, true);
-            }
+            _updateOrRemove(from, balanceOf(from));
+            return;
+        }
+
+        // transferFrom
+        _updateOrRemove(from, balanceOf(from));
+        _updateElement(to, balanceOf(to));
+    }
+
+    function _updateOrRemove(address account, uint256 balance) private {
+        if (balance != 0) {
+            _updateElement(account, balance);
         } else {
-            // transferFrom
-            uint256 fromBalance = balanceOf(from);
-            uint256 toBalance = balanceOf(to);
-            if (fromBalance != 0) {
-                _updateElement(from, fromBalance);
-                _updateElement(to, toBalance);
-            } else {
-                _removeElement(from, false);
-                _updateElement(to, toBalance);
-            }
+            _removeElement(account, true);
         }
     }
 
